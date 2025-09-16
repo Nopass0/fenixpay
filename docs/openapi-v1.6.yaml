@@ -1,0 +1,723 @@
+openapi: 3.0.0
+info:
+  title: Chase P2P Payment Platform API v1.6
+  version: 1.6.0
+  description: API documentation for the Chase P2P payment platform with enhanced payout system
+  
+servers:
+  - url: https://api.chase.example.com/api
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Development server
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+paths:
+  /merchant/payouts:
+    post:
+      summary: Create a new payout
+      tags: [Merchant Payouts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePayoutRequest'
+      responses:
+        200:
+          description: Payout created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+          
+    get:
+      summary: List payouts
+      tags: [Merchant Payouts]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            description: Comma-separated list of statuses
+            example: "ACTIVE,CHECKING"
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum: [IN, OUT]
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        200:
+          description: List of payouts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutListResponse'
+                
+  /merchant/payouts/{id}:
+    get:
+      summary: Get payout details
+      tags: [Merchant Payouts]
+      parameters:
+        - $ref: '#/components/parameters/PayoutId'
+      responses:
+        200:
+          description: Payout details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutDetailsResponse'
+        404:
+          $ref: '#/components/responses/NotFound'
+          
+  /merchant/payouts/{id}/approve:
+    post:
+      summary: Approve a payout in checking status
+      tags: [Merchant Payouts]
+      parameters:
+        - $ref: '#/components/parameters/PayoutId'
+      responses:
+        200:
+          description: Payout approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutStatusResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+          
+  /merchant/payouts/{id}/dispute:
+    post:
+      summary: Create a dispute for a payout
+      tags: [Merchant Payouts]
+      parameters:
+        - $ref: '#/components/parameters/PayoutId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDisputeRequest'
+      responses:
+        200:
+          description: Dispute created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutStatusResponse'
+                
+  /merchant/payouts/{id}/cancel:
+    patch:
+      summary: Cancel a payout
+      tags: [Merchant Payouts]
+      parameters:
+        - $ref: '#/components/parameters/PayoutId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reasonCode]
+              properties:
+                reasonCode:
+                  type: string
+                  minLength: 3
+                  example: "DUPLICATE_ORDER"
+      responses:
+        200:
+          description: Payout cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutStatusResponse'
+                
+  /merchant/payouts/{id}/rate:
+    patch:
+      summary: Update payout rate or amount
+      tags: [Merchant Payouts]
+      parameters:
+        - $ref: '#/components/parameters/PayoutId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                merchantRate:
+                  type: number
+                  minimum: 0
+                  example: 102
+                amount:
+                  type: number
+                  minimum: 0
+                  example: 12000
+      responses:
+        200:
+          description: Payout updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutRateResponse'
+                
+  /admin/payouts/{id}/rate-adjust:
+    patch:
+      summary: Adjust payout rate (Admin only)
+      tags: [Admin]
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PayoutId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rateDelta, feePercent]
+              properties:
+                rateDelta:
+                  type: number
+                  description: Rate adjustment to add to merchant rate
+                  example: 2
+                feePercent:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                  description: Fee percentage
+                  example: 1.5
+      responses:
+        200:
+          description: Rate adjusted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateAdjustmentResponse'
+                
+  /trader/payouts:
+    get:
+      summary: Get trader's payouts
+      tags: [Trader]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        200:
+          description: List of payouts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraderPayoutListResponse'
+                
+  /trader/payouts/{id}/accept:
+    post:
+      summary: Accept a payout
+      tags: [Trader]
+      parameters:
+        - $ref: '#/components/parameters/PayoutId'
+      responses:
+        200:
+          description: Payout accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  payout:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      status:
+                        type: string
+                      expireAt:
+                        type: string
+                        format: date-time
+                        
+  /trader/payouts/{id}/confirm:
+    post:
+      summary: Confirm payout with proof
+      tags: [Trader]
+      parameters:
+        - $ref: '#/components/parameters/PayoutId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [proofFiles]
+              properties:
+                proofFiles:
+                  type: array
+                  items:
+                    type: string
+                    description: Base64 encoded image files
+                  minItems: 1
+                  maxItems: 10
+      responses:
+        200:
+          description: Payout confirmed
+          
+  /telegram/link:
+    post:
+      summary: Link Telegram account
+      tags: [Telegram]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, telegramChatId, telegramBotToken]
+              properties:
+                userId:
+                  type: string
+                telegramChatId:
+                  type: string
+                telegramBotToken:
+                  type: string
+      responses:
+        200:
+          description: Telegram linked
+
+  /wellbit/payment/create:
+    post:
+      summary: Create payment
+      tags: [Wellbit]
+      security:
+        - ApiKeyAuth: []
+        - HmacAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, wallet, bank, isCard]
+              properties:
+                amount:
+                  type: number
+                wallet:
+                  type: string
+                bank:
+                  type: string
+                isCard:
+                  type: boolean
+      responses:
+        200:
+          description: Payment created
+
+  /wellbit/payment/get:
+    post:
+      summary: Get payment details
+      tags: [Wellbit]
+      security:
+        - ApiKeyAuth: []
+        - HmacAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: string
+      responses:
+        200:
+          description: Payment details
+
+  /wellbit/payment/status:
+    post:
+      summary: Get payment status
+      tags: [Wellbit]
+      security:
+        - ApiKeyAuth: []
+        - HmacAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: string
+      responses:
+        200:
+          description: Payment status
+          
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    AdminAuth:
+      type: apiKey
+      in: header
+      name: x-admin-key
+    HmacAuth:
+      type: apiKey
+      in: header
+      name: x-api-token
+      
+  parameters:
+    PayoutId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        description: Payout ID
+        
+  schemas:
+    CreatePayoutRequest:
+      type: object
+      required: [amount, wallet, bank, isCard, merchantRate]
+      properties:
+        amount:
+          type: number
+          minimum: 100
+          description: Amount in RUB
+          example: 10000
+        wallet:
+          type: string
+          minLength: 10
+          description: Recipient wallet/phone
+          example: "41001234567890"
+        bank:
+          type: string
+          minLength: 3
+          description: Bank identifier
+          example: "SBER"
+        isCard:
+          type: boolean
+          description: Whether payout is to card
+        merchantRate:
+          type: number
+          minimum: 1
+          description: Exchange rate
+          example: 100
+        externalReference:
+          type: string
+          description: External reference ID
+          example: "ORDER-123"
+        processingTime:
+          type: integer
+          minimum: 5
+          maximum: 60
+          description: Processing time in minutes
+          default: 15
+        webhookUrl:
+          type: string
+          format: uri
+          description: Webhook URL for status updates
+        metadata:
+          type: object
+          description: Additional metadata
+          
+    PayoutResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        payout:
+          $ref: '#/components/schemas/Payout'
+          
+    Payout:
+      type: object
+      properties:
+        id:
+          type: string
+        numericId:
+          type: integer
+        amount:
+          type: number
+        amountUsdt:
+          type: number
+        total:
+          type: number
+        totalUsdt:
+          type: number
+        rate:
+          type: number
+        merchantRate:
+          type: number
+        rateDelta:
+          type: number
+        feePercent:
+          type: number
+        wallet:
+          type: string
+        bank:
+          type: string
+        isCard:
+          type: boolean
+        status:
+          type: string
+          enum: [CREATED, ACTIVE, CHECKING, COMPLETED, DISPUTED, CANCELLED, EXPIRED]
+        direction:
+          type: string
+          enum: [IN, OUT]
+        externalReference:
+          type: string
+        expireAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        acceptedAt:
+          type: string
+          format: date-time
+        confirmedAt:
+          type: string
+          format: date-time
+        cancelledAt:
+          type: string
+          format: date-time
+          
+    PayoutListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payout'
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+            totalPages:
+              type: integer
+              
+    PayoutDetailsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        payout:
+          allOf:
+            - $ref: '#/components/schemas/Payout'
+            - type: object
+              properties:
+                proofFiles:
+                  type: array
+                  items:
+                    type: string
+                disputeFiles:
+                  type: array
+                  items:
+                    type: string
+                disputeMessage:
+                  type: string
+                cancelReason:
+                  type: string
+                cancelReasonCode:
+                  type: string
+                  
+    PayoutStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        payout:
+          type: object
+          properties:
+            id:
+              type: string
+            numericId:
+              type: integer
+            status:
+              type: string
+              
+    CreateDisputeRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 10
+          description: Dispute reason
+        files:
+          type: array
+          items:
+            type: string
+            description: Base64 encoded files
+            
+    PayoutRateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        payout:
+          type: object
+          properties:
+            id:
+              type: string
+            numericId:
+              type: integer
+            amount:
+              type: number
+            merchantRate:
+              type: number
+            rate:
+              type: number
+            total:
+              type: number
+              
+    RateAdjustmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        payout:
+          $ref: '#/components/schemas/Payout'
+        adjustment:
+          type: object
+          properties:
+            oldRateDelta:
+              type: number
+            newRateDelta:
+              type: number
+            oldFeePercent:
+              type: number
+            newFeePercent:
+              type: number
+            adminId:
+              type: string
+              
+    TraderPayoutListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        payouts:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              numericId:
+                type: integer
+              amount:
+                type: number
+              amountUsdt:
+                type: number
+              total:
+                type: number
+              totalUsdt:
+                type: number
+              rate:
+                type: number
+              wallet:
+                type: string
+              bank:
+                type: string
+              isCard:
+                type: boolean
+              status:
+                type: string
+              expireAt:
+                type: string
+                format: date-time
+              createdAt:
+                type: string
+                format: date-time
+              merchantName:
+                type: string
+        total:
+          type: integer
+          
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid API key"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Payout not found"

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Notification UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #006039;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #004d2e;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        .notification-preview {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .notification-preview:hover {
+            background: #f0f0f0;
+        }
+        .truncated {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Тест UI для уведомлений</h1>
+        
+        <div class="section">
+            <h2>Детали сделки #40</h2>
+            <p><strong>Сумма:</strong> 5000 RUB</p>
+            <p><strong>Статус:</strong> READY</p>
+            
+            <div class="notification-preview" onclick="goToNotifications()">
+                <p><strong>📱 Уведомление от банка</strong></p>
+                <p class="truncated" id="notification-text">СЧЁТ2538 25.07 16:37 зачисление 5000р от Test Client Баланс: 125000.50р</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Навигация</h2>
+            <button class="button" onclick="goToNotifications()">
+                Перейти к уведомлениям
+            </button>
+            <button class="button" onclick="showFullMessage()">
+                Показать полное сообщение
+            </button>
+        </div>
+        
+        <div class="section">
+            <h2>Результат</h2>
+            <p id="result">Кликните на уведомление, чтобы перейти на страницу уведомлений</p>
+        </div>
+    </div>
+    
+    <script>
+        const notificationId = 'cmdiv87gz0003ik52hxmw5khb';
+        const fullMessage = 'СЧЁТ2538 25.07 16:37 зачисление 5000р от Test Client Баланс: 125000.50р';
+        
+        // Truncate message on load
+        window.onload = function() {
+            const textEl = document.getElementById('notification-text');
+            if (fullMessage.length > 60) {
+                textEl.textContent = fullMessage.substring(0, 60) + '...';
+            }
+        };
+        
+        function goToNotifications() {
+            const url = `/trader/notifications?notificationId=${notificationId}`;
+            document.getElementById('result').innerHTML = `
+                <strong>Переход на:</strong><br>
+                ${url}<br><br>
+                На странице уведомлений должно открыться модальное окно с деталями уведомления
+            `;
+            console.log('Navigating to:', url);
+            // In real app: router.push(url)
+        }
+        
+        function showFullMessage() {
+            document.getElementById('notification-text').textContent = fullMessage;
+            document.getElementById('notification-text').classList.remove('truncated');
+        }
+    </script>
+</body>
+</html>

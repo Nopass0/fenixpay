@@ -1,0 +1,78 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace 'ru.chasepay.mobile'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "ru.chasepay.mobile"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+        
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        debug {
+            // Uses Android debug keystore
+        }
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField "String", "BASE_URL", "\"${System.getenv('DEBUG_BASE_URL') ?: 'http://10.0.2.2:3000/api'}\""
+            minifyEnabled false
+            signingConfig signingConfigs.debug
+        }
+        release {
+            buildConfigField "String", "BASE_URL", "\"${System.getenv('PROD_BASE_URL') ?: 'https://chasepay.pro/api'}\""
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug  // Use debug signing for now
+        }
+        prodDebug {
+            initWith debug
+            buildConfigField "String", "BASE_URL", "\"https://chasepay.pro/api\""
+            debuggable true
+            minifyEnabled false
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['debug']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    
+    buildFeatures {
+        viewBinding true
+        buildConfig true
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    
+    // QR Code Scanner
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    implementation 'com.google.zxing:core:3.5.3'
+    
+    // Network
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+    
+    // Permissions
+    implementation 'com.karumi:dexter:6.2.3'
+    
+    // WorkManager for background tasks
+    implementation 'androidx.work:work-runtime:2.9.0'
+    
+    // Auto-update
+    implementation 'com.github.javiersantos:AppUpdater:2.7'
+}

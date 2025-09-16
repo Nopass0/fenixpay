@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  apk-builder:
+    image: mingc/android-build-box:latest
+    container_name: chase-apk-builder
+    volumes:
+      - ./apk:/workspace
+      - ./built-apks:/output
+    environment:
+      - SERVER_URL=${SERVER_URL:-https://chase.example.com}
+    command: |
+      bash -c "
+        cd /workspace
+        
+        # Update BASE_URL in build.gradle
+        sed -i \"s|http://10.0.2.2:3000|$$SERVER_URL|g\" app/build.gradle
+        
+        # Get current version from build.gradle
+        CURRENT_VERSION_CODE=\$$(grep 'versionCode' app/build.gradle | head -1 | awk '{print \$$2}')
+        NEW_VERSION_CODE=\$$((CURRENT_VERSION_CODE + 1))
+        VERSION_NAME=\"1.0.\$$NEW_VERSION_CODE\"
+        
+        # Update version
+        sed -i \"s/versionCode \$$CURRENT_VERSION_CODE/versionCode \$$NEW_VERSION_CODE/g\" app/build.gradle
+        sed -i \"s/versionName \\\".*\\\"/versionName \\\"\$$VERSION_NAME\\\"/g\" app/build.gradle
+        
+        # Build APK
+        ./gradlew clean assembleRelease
+        
+        # Copy to output
+        if [ -f app/build/outputs/apk/release/app-release-unsigned.apk ]; then
+          cp app/build/outputs/apk/release/app-release-unsigned.apk /output/chase-mobile.apk
+          echo \"✅ APK built successfully: chase-mobile.apk\"
+          echo \"Version: \$$VERSION_NAME\"
+        else
+          echo \"❌ Build failed!\"
+          exit 1
+        fi
+      "

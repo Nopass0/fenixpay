@@ -1,0 +1,68 @@
+/* Fix for ResizeObserver issues with Radix UI */
+[data-radix-popper-content-wrapper] {
+  will-change: auto !important;
+  transform-style: flat !important;
+}
+
+/* Stabilize sticky elements */
+.sticky {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  -moz-backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Prevent layout recalculations */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-anchor: none;
+}
+
+/* Prevent layout shifts in Select/Popover content */
+[data-radix-select-content],
+[data-radix-popover-content] {
+  animation-duration: 150ms !important;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Smooth transitions for dropdowns */
+[data-state="open"] {
+  animation: slideDown 150ms ease-out;
+}
+
+[data-state="closed"] {
+  animation: slideUp 150ms ease-in;
+}
+
+/* Prevent ResizeObserver errors */
+[data-radix-select-viewport],
+[data-radix-popover-content] {
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}

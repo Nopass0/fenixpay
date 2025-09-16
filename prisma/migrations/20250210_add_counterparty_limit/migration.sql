@@ -1,0 +1,3 @@
+-- AlterTable (deferred - will be added in 20250705_add_deferred_columns)
+-- ALTER TABLE "BankDetail" ADD COLUMN "counterpartyLimit" INTEGER NOT NULL DEFAULT 0;
+-- This migration is a placeholder. The actual column is added after BankDetail table is created.

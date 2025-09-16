@@ -1,0 +1,26 @@
+{
+  "name": "voice-project",
+  "version": "1.0.0",
+  "description": "Voice P2P Payment Platform",
+  "private": true,
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:backend dev:frontend",
+    "dev:backend": "cd backend && bun run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm-run-all build:backend build:frontend",
+    "build:backend": "cd backend && bun run build",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "npm-run-all --parallel start:backend start:frontend",
+    "start:backend": "cd backend && bun run src/index.ts",
+    "start:frontend": "cd frontend && npm run start",
+    "install:all": "npm-run-all install:backend install:frontend",
+    "install:backend": "cd backend && bun install",
+    "install:frontend": "cd frontend && npm install"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  },
+  "dependencies": {
+    "axios": "^1.10.0"
+  }
+}

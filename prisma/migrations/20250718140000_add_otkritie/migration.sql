@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "BankType" ADD VALUE IF NOT EXISTS 'OTKRITIE';

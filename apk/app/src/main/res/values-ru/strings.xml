@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CHA$E</string>
+    <string name="scan_qr_code">Сканировать QR-код</string>
+    <string name="enter_code_manually">Ввести код вручную</string>
+    <string name="device_code">Код устройства</string>
+    <string name="connect">Подключить</string>
+    <string name="cancel">Отмена</string>
+    <string name="connecting">Подключение...</string>
+    <string name="connection_success">Устройство успешно подключено</string>
+    <string name="connection_failed">Ошибка подключения</string>
+    <string name="status">Статус</string>
+    <string name="connected">Подключено</string>
+    <string name="disconnected">Отключено</string>
+    <string name="server">Сервер</string>
+    <string name="battery_level">Уровень заряда</string>
+    <string name="network_speed">Скорость сети</string>
+    <string name="last_update">Последнее обновление</string>
+    <string name="debug_menu">Отладка</string>
+    <string name="device_info">Информация об устройстве</string>
+    <string name="logs">Логи</string>
+    <string name="test_notification">Тестовое уведомление</string>
+    <string name="create_test_notification">Создать тестовое уведомление</string>
+    <string name="notification_listener_service">Мониторинг уведомлений CHA$E</string>
+    <string name="permission_required">Требуется разрешение</string>
+    <string name="grant_permission">Предоставить разрешение</string>
+    <string name="camera_permission_message">Для сканирования QR-кода требуется доступ к камере</string>
+    <string name="notification_permission_message">Для мониторинга банковских уведомлений требуется доступ к уведомлениям</string>
+    <string name="test_notification_title">Тестовый платеж</string>
+    <string name="test_notification_text">Поступление 1000 ₽ от *1234</string>
+    <string name="test_notification_sent">Тестовое уведомление отправлено</string>
+    <string name="scanning_qr">Сканирование QR-кода...</string>
+    <string name="point_camera_at_qr">Наведите камеру на QR-код</string>
+    <string name="notifications_monitored">Уведомления отслеживаются</string>
+    <string name="device_status">Статус устройства</string>
+    <string name="server_connection">Подключение к серверу</string>
+    <string name="monitoring_active">Мониторинг активен</string>
+    <string name="refresh">Обновить</string>
+    <string name="settings">Настройки</string>
+    <string name="about">О приложении</string>
+</resources>

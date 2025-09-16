@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # Local PostgreSQL for development only
+  postgres:
+    image: postgres:16-alpine
+    container_name: chase_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chase_secure_password}
+      POSTGRES_DB: chase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - chase_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - local
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chase_backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:chase_secure_password@postgres:5432/chase?schema=public}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this}
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3001
+      SUPER_ADMIN_KEY: ${SUPER_ADMIN_KEY:-}
+      ADMIN_IPS: ${ADMIN_IPS:-}
+      DES_ENABLED: ${DES_ENABLED:-true}
+    expose:
+      - "3001"
+    networks:
+      - chase_network
+    restart: unless-stopped
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://chasepay.pro
+    container_name: chase_frontend
+    environment:
+      NODE_ENV: production
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+    networks:
+      - chase_network
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: chase_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+      - ./backend/uploads:/app/uploads:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - chase_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  chase_network:
+    driver: bridge

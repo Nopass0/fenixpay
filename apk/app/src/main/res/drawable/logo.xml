@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="80dp"
+    android:viewportWidth="200"
+    android:viewportHeight="80">
+    
+    <!-- CHA text -->
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M20,50 L20,30 Q20,25 25,25 L30,25 Q35,25 35,30 L35,35 L25,35 M25,45 L35,45 L35,50 Q35,55 30,55 L25,55 Q20,55 20,50 Z"/>
+    
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M45,25 L60,25 L60,35 L45,35 L45,45 L60,45 L60,55 L45,55 Z"/>
+    
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M70,25 L75,25 L85,55 L80,55 L77.5,45 L72.5,45 L70,55 L65,55 L75,25 Z"/>
+    
+    <!-- $ symbol -->
+    <path
+        android:fillColor="#006039"
+        android:pathData="M100,20 L100,25 Q90,25 90,35 Q90,40 100,40 Q110,40 110,50 Q110,60 100,60 L100,65 L95,65 L95,60 Q85,60 85,50 L90,50 Q90,55 95,55 L95,45 Q85,45 85,35 Q85,25 95,25 L95,20 L100,20 Z"/>
+    
+    <!-- E text -->
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M120,25 L140,25 L140,35 L125,35 L125,40 L135,40 L135,45 L125,45 L125,45 L140,45 L140,55 L120,55 Z"/>
+    
+</vector>

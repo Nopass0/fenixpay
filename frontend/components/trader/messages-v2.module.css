@@ -1,0 +1,351 @@
+/* Container */
+.container {
+  @apply mx-auto p-6 max-w-[1440px];
+}
+
+/* Page Layout */
+.page {
+  @apply space-y-6;
+}
+
+/* Header */
+.header {
+  @apply mb-6;
+}
+
+.title {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+/* Search Section */
+.searchSection {
+  @apply space-y-2;
+}
+
+.searchTitle {
+  @apply text-sm font-medium text-gray-700;
+}
+
+.searchWrapper {
+  @apply relative flex items-center bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors;
+}
+
+.searchIcon {
+  @apply absolute left-3 pointer-events-none;
+}
+
+.searchIcon svg {
+  @apply w-5 h-5 text-gray-400;
+}
+
+.searchInput {
+  @apply w-full pl-10 pr-20 py-2.5 bg-transparent border-0 focus:ring-0 focus:outline-none text-sm;
+}
+
+.searchControls {
+  @apply absolute right-1 flex items-center gap-1;
+}
+
+.searchButton,
+.cancelButton {
+  @apply p-2 rounded-md hover:bg-gray-100 transition-colors;
+}
+
+.searchButton svg,
+.cancelButton svg {
+  @apply w-4 h-4 text-gray-500;
+}
+
+/* Filters */
+.filtersContainer {
+  @apply bg-white rounded-lg border border-gray-200 p-4 space-y-4;
+}
+
+.filtersGrid {
+  @apply grid grid-cols-1 lg:grid-cols-2 gap-4;
+}
+
+.filterWrapper {
+  @apply space-y-2;
+}
+
+.filterTitle {
+  @apply text-sm font-medium text-gray-700;
+}
+
+.filterButton {
+  @apply w-full flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm;
+}
+
+.filterButton svg {
+  @apply w-4 h-4;
+}
+
+.iconLeft {
+  @apply mr-2 text-blue-500;
+}
+
+.chevron {
+  @apply text-gray-400;
+}
+
+.placeholder {
+  @apply text-gray-500;
+}
+
+/* Sort Section */
+.sortSection {
+  @apply space-y-2;
+}
+
+.sortLabel {
+  @apply text-sm font-medium text-gray-700;
+}
+
+.sortWrapper {
+  @apply relative;
+}
+
+.sortButton {
+  @apply w-full flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors;
+}
+
+.selectedItem {
+  @apply flex items-center gap-2 text-sm font-medium;
+}
+
+.sortIcon svg {
+  @apply w-5 h-5 text-blue-500;
+}
+
+.selectedText {
+  @apply text-gray-900;
+}
+
+.sortChevron {
+  @apply transform rotate-180;
+}
+
+.dropdown {
+  @apply absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 hidden;
+}
+
+.dropdownOpen {
+  @apply block;
+}
+
+.dropdownItem {
+  @apply px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer transition-colors;
+}
+
+.dropdownItem.active {
+  @apply bg-blue-50 text-blue-600 font-medium;
+}
+
+/* Messages List */
+.messagesList {
+  @apply bg-white rounded-lg border border-gray-200 divide-y divide-gray-100;
+}
+
+.messageItem {
+  @apply block hover:bg-gray-50 transition-colors;
+}
+
+.messageContent {
+  @apply p-4;
+}
+
+.messageHeader {
+  @apply flex items-start gap-4;
+}
+
+.messageIcon {
+  @apply p-2.5 rounded-lg flex items-center justify-center flex-shrink-0;
+}
+
+.messageIcon.primary {
+  @apply bg-blue-100;
+}
+
+.messageIcon.danger {
+  @apply bg-red-100;
+}
+
+.messageIcon.warning {
+  @apply bg-yellow-100;
+}
+
+.messageIcon.accent {
+  @apply bg-purple-100;
+}
+
+.messageIcon svg {
+  @apply w-5 h-5;
+}
+
+.messageIcon.primary svg {
+  @apply text-blue-600;
+}
+
+.messageIcon.danger svg {
+  @apply text-red-600;
+}
+
+.messageIcon.warning svg {
+  @apply text-yellow-600;
+}
+
+.messageIcon.accent svg {
+  @apply text-purple-600;
+}
+
+.messageBody {
+  @apply flex-1 min-w-0;
+}
+
+.messageTitle {
+  @apply flex items-center gap-2 mb-1;
+}
+
+.messageSender {
+  @apply font-medium text-sm;
+}
+
+.messageSender.primary {
+  @apply text-gray-900;
+}
+
+.messageSender.danger {
+  @apply text-red-600;
+}
+
+.messageSender.warning {
+  @apply text-yellow-600;
+}
+
+.messageSender.accent {
+  @apply text-purple-600;
+}
+
+.messageTime {
+  @apply text-xs text-gray-500;
+}
+
+.messageText {
+  @apply text-sm text-gray-700 line-clamp-2;
+}
+
+/* Message Fields */
+.fieldContainer {
+  @apply flex items-start gap-3 mt-3;
+}
+
+.fieldIcon {
+  @apply p-1.5 rounded-md flex items-center justify-center;
+}
+
+.fieldIcon.primary {
+  @apply bg-gray-100;
+}
+
+.fieldIcon.danger {
+  @apply bg-red-50;
+}
+
+.fieldIcon.warning {
+  @apply bg-yellow-50;
+}
+
+.fieldIcon.accent {
+  @apply bg-purple-50;
+}
+
+.fieldIcon svg {
+  @apply w-4 h-4;
+}
+
+.fieldContent {
+  @apply flex-1 min-w-0;
+}
+
+.fieldText {
+  @apply text-sm font-medium text-gray-900;
+}
+
+.fieldDescription {
+  @apply text-xs text-gray-500 mt-0.5;
+}
+
+/* Message Amount */
+.messageAmount {
+  @apply text-sm font-semibold ml-auto flex-shrink-0;
+}
+
+.messageAmount.primary {
+  @apply text-gray-900;
+}
+
+.messageAmount.danger {
+  @apply text-red-600;
+}
+
+.messageAmount.warning {
+  @apply text-yellow-600;
+}
+
+.messageAmount.accent {
+  @apply text-purple-600;
+}
+
+/* Loading State */
+.loading {
+  @apply flex items-center justify-center py-12;
+}
+
+.loader {
+  @apply inline-block w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin;
+}
+
+/* Empty State */
+.emptyState {
+  @apply text-center py-12;
+}
+
+.emptyIcon {
+  @apply w-12 h-12 text-gray-400 mx-auto mb-4;
+}
+
+.emptyTitle {
+  @apply text-gray-600 font-medium;
+}
+
+.emptyDescription {
+  @apply text-sm text-gray-500 mt-2;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+  
+  .filtersGrid {
+    @apply grid-cols-1;
+  }
+  
+  .messageText {
+    @apply line-clamp-1;
+  }
+  
+  .fieldContainer {
+    @apply flex-col gap-2;
+  }
+  
+  .messageTime {
+    @apply hidden;
+  }
+  
+  .messageAmount {
+    @apply text-xs;
+  }
+}

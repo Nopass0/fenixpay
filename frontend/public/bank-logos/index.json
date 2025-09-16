@@ -1,0 +1,114 @@
+{
+  "banks": [
+    {
+      "id": "sberbank",
+      "name": "Сбербанк",
+      "logo": "sberbank.svg"
+    },
+    {
+      "id": "tinkoff",
+      "name": "Тинькофф",
+      "logo": "tinkoff.svg"
+    },
+    {
+      "id": "tbank",
+      "name": "Т-Банк",
+      "logo": "tbank.svg"
+    },
+    {
+      "id": "vtb",
+      "name": "ВТБ",
+      "logo": "vtb.svg"
+    },
+    {
+      "id": "alfabank",
+      "name": "Альфа-Банк",
+      "logo": "alfabank.svg"
+    },
+    {
+      "id": "raiffeisen",
+      "name": "Райффайзен",
+      "logo": "raiffeisen.svg"
+    },
+    {
+      "id": "gazprombank",
+      "name": "Газпромбанк",
+      "logo": "gazprombank.svg"
+    },
+    {
+      "id": "rosbank",
+      "name": "Росбанк",
+      "logo": "rosbank.svg"
+    },
+    {
+      "id": "otkritie",
+      "name": "Открытие",
+      "logo": "otkritie.svg"
+    },
+    {
+      "id": "psb",
+      "name": "ПСБ",
+      "logo": "psb.svg"
+    },
+    {
+      "id": "pochtabank",
+      "name": "Почта Банк",
+      "logo": "pochtabank.svg"
+    },
+    {
+      "id": "sovcombank",
+      "name": "Совкомбанк",
+      "logo": "sovcombank.svg"
+    },
+    {
+      "id": "mkb",
+      "name": "МКБ",
+      "logo": "mkb.svg"
+    },
+    {
+      "id": "uralsib",
+      "name": "Уралсиб",
+      "logo": "uralsib.svg"
+    },
+    {
+      "id": "unicredit",
+      "name": "ЮниКредит",
+      "logo": "unicredit.png"
+    },
+    {
+      "id": "rshb",
+      "name": "Россельхозбанк",
+      "logo": "rshb.svg"
+    },
+    {
+      "id": "russian-standard",
+      "name": "Русский Стандарт",
+      "logo": "russian-standard.svg"
+    },
+    {
+      "id": "bspb",
+      "name": "Банк Санкт-Петербург",
+      "logo": "bspb.svg"
+    },
+    {
+      "id": "avangard",
+      "name": "Авангард",
+      "logo": "avangard.svg"
+    },
+    {
+      "id": "akbars",
+      "name": "Ак Барс",
+      "logo": "akbars.svg"
+    },
+    {
+      "id": "zenit",
+      "name": "Зенит",
+      "logo": "zenit.svg"
+    },
+    {
+      "id": "rnkb",
+      "name": "РНКБ",
+      "logo": "rnkb.svg"
+    }
+  ]
+}

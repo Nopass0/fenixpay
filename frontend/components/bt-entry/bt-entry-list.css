@@ -1,0 +1,14 @@
+@keyframes flash {
+  0% {
+    background-color: rgb(254 240 138); /* yellow-200 */
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.5);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.flash-once {
+  animation: flash 0.5s ease-in-out;
+}

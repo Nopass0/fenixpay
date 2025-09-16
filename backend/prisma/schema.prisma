@@ -1,0 +1,2059 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String                  @id @default(cuid())
+  email                  String                  @unique
+  password               String
+  banned                 Boolean                 @default(false)
+  createdAt              DateTime                @default(now())
+  name                   String
+  balanceUsdt            Float
+  balanceRub             Float
+  frozenUsdt             Float                   @default(0)
+  frozenRub              Float                   @default(0)
+  trafficEnabled         Boolean                 @default(true)
+  /// Константный курс для трейдера (если используется)
+  rateConst              Float?
+  /// Использовать ли константный курс вместо автоматического
+  useConstRate           Boolean                 @default(false)
+  /// Процент профита трейдера
+  profitPercent          Float?                  @default(0)
+  /// Процент ставки трейдера
+  stakePercent           Float?                  @default(0)
+  /// Индивидуальный ККК процент трейдера
+  kkkPercent             Float?                  @default(0)
+  /// Депозит трейдера
+  deposit                Float                   @default(0)
+  /// Лимит одновременных споров
+  disputeLimit           Int                     @default(5)
+  /// Замороженный баланс выплат
+  frozenPayoutBalance    Float                   @default(0)
+  /// Максимальная сумма на реквизит
+  maxAmountPerRequisite  Float                   @default(100000)
+  /// Максимальный страховой депозит
+  maxInsuranceDeposit    Float                   @default(100000)
+  /// Максимальное количество выплат, которые можно брать на проверку одновременно
+  maxSimultaneousPayouts Int                     @default(5)
+  /// Минимальная сумма на реквизит
+  minAmountPerRequisite  Float                   @default(100)
+  /// Минимальная сумма выплаты для трейдера
+  minPayoutAmount        Float                   @default(100)
+  /// Максимальная сумма выплаты для трейдера
+  maxPayoutAmount        Float                   @default(1000000)
+  /// Дельта курса для выплат (процент)
+  payoutRateDelta        Float                   @default(0)
+  /// Комиссия за выплаты (процент)
+  payoutFeePercent       Float                   @default(0)
+  /// Минимальный страховой депозит
+  minInsuranceDeposit    Float                   @default(0)
+  numericId              Int                     @unique @default(autoincrement())
+  /// Время на принятие выплаты в минутах
+  payoutAcceptanceTime   Int                     @default(5)
+  /// Баланс для выплат в рублях
+  payoutBalance          Float                   @default(0)
+  /// Прибыль со сделок (IN транзакций)
+  profitFromDeals        Float                   @default(0)
+  /// Прибыль с выплат (OUT транзакций)
+  profitFromPayouts      Float                   @default(0)
+  /// ID команды трейдера
+  teamId                 String?
+  /// Telegram Bot Token
+  telegramBotToken       String?
+  /// Telegram Chat ID для уведомлений
+  telegramChatId         String?
+  /// Telegram Dispute Chat ID для споров
+  telegramDisputeChatId  String?
+  /// Баланс трейдера
+  trustBalance           Float                   @default(0)
+  agentTraders           AgentTrader[]
+  balanceTopUps          BalanceTopUp[]
+  bankDetails            BankDetail[]
+  cryptoWallet           CryptoWallet?
+  dealDisputes           DealDispute[]
+  depositRequests        DepositRequest[]
+  devices                Device[]
+  folders                Folder[]
+  ideas                  Idea[]
+  messages               Message[]
+  payouts                Payout[]                @relation("TraderPayouts")
+  payoutFilters          PayoutFilters?
+  trafficSettings        TrafficSettings?
+  sessions               Session[]
+  supportTickets         SupportTicket[]
+  traderMerchants        TraderMerchant[]
+  tradedTransactions     Transaction[]           @relation("TraderTransactions")
+  team                   Team?                   @relation(fields: [teamId], references: [id])
+  WalletCreationRequest  WalletCreationRequest[]
+  withdrawalDisputes     WithdrawalDispute[]
+  withdrawalRequests     WithdrawalRequest[]
+  payoutCancellations    PayoutCancellationHistory[]
+  /// Предпочитаемый источник курса для трейдера (переопределяет метод, если связь trader-merchant не задана)
+  rateSource             RateSource?
+  /// ID конфигурации источника курса
+  rateSourceConfigId     String?
+  /// Связь с конфигурацией источника курса
+  rateSourceConfig       RateSourceConfig? @relation("TraderRateSource", fields: [rateSourceConfigId], references: [id])
+  /// Индивидуальные настройки трейдера по источникам курсов
+  rateSourceSettings     TraderRateSourceSettings[] @relation("TraderRateSourceSettings")
+  /// Отображаемые ставки трейдера (новая система)
+  displayRates           TraderDisplayRate[] @relation("TraderDisplayRates")
+  /// Отображаемая ставка (%) для трейдера (для UI) - DEPRECATED, использовать displayRates
+  displayStakePercent    Float?
+  /// Отображаемый диапазон суммы (от) для трейдера (для UI) - DEPRECATED, использовать displayRates
+  displayAmountFrom      Float?
+  /// Отображаемый диапазон суммы (до) для трейдера (для UI) - DEPRECATED, использовать displayRates
+  displayAmountTo        Float?
+  /// Минимальная сумма чека для трейдера
+  minCheckAmount         Float                   @default(100)
+  /// Максимальная сумма чека для трейдера
+  maxCheckAmount         Float                   @default(1000000)
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  ip        String
+  createdAt DateTime @default(now())
+  expiredAt DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Admin {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  createdAt DateTime  @default(now())
+  role      AdminRole @default(ADMIN)
+  
+  // 2FA fields
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+  backupCodes      String[] // JSON array of backup codes
+}
+
+model AdminIpWhitelist {
+  id          String   @id @default(cuid())
+  ip          String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model AdminLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  details   String?
+  ip        String
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([createdAt])
+}
+
+model Merchant {
+  id                   String               @id @default(cuid())
+  name                 String
+  token                String               @unique
+  disabled             Boolean              @default(false)
+  banned               Boolean              @default(false)
+  balanceUsdt          Float                @default(0)
+  createdAt            DateTime             @default(now())
+  apiKeyPublic         String?              @unique
+  apiKeyPrivate        String?
+  countInRubEquivalent Boolean              @default(false)
+  wellbitCallbackUrl   String?
+  /// Поля для аукционной системы
+  isAuctionEnabled     Boolean              @default(false)
+  auctionBaseUrl       String?
+  auctionCallbackUrl   String?
+  rsaPublicKeyPem      String?
+  rsaPrivateKeyPem     String?
+  keysGeneratedAt      DateTime?
+  externalSystemName   String?
+  /// Поля для работы в режиме агрегатора
+  isAggregatorMode     Boolean              @default(false)
+  externalApiToken     String?              @unique
+  externalCallbackToken String?
+  dealDisputes         DealDispute[]
+  aggregatorDisputes   AggregatorDispute[] @relation("AggregatorDisputes")
+  merchantMethods      MerchantMethod[]
+  settlements          MerchantSettlement[]
+  payouts              Payout[]
+  settleRequests       SettleRequest[]
+  supportTickets       SupportTicket[]
+  traderMerchants      TraderMerchant[]
+  Transaction          Transaction[]
+  transactionAttempts  TransactionAttempt[]
+  withdrawalDisputes   WithdrawalDispute[]
+  merchantRequestLogs  MerchantRequestLog[]
+  merchantStaff        MerchantStaff[]
+  totpEnabled          Boolean              @default(false)
+  totpSecret           String?
+  /// Связи с источниками курсов
+  rateSources          MerchantRateSource[]
+  /// Связи с агрегаторами
+  aggregatorMerchants  AggregatorMerchant[]
+
+  @@index([isAuctionEnabled])
+  @@index([externalSystemName])
+}
+
+enum MerchantStaffRole {
+  owner
+  staff
+}
+
+model MerchantStaff {
+  id         String            @id @default(cuid())
+  merchantId String
+  name       String
+  token      String            @unique
+  role       MerchantStaffRole @default(staff)
+  isActive   Boolean           @default(true)
+  createdAt  DateTime          @default(now())
+  merchant   Merchant          @relation(fields: [merchantId], references: [id])
+
+  @@index([merchantId])
+}
+
+model Method {
+  id                  String               @id @default(cuid())
+  code                String               @unique
+  name                String
+  type                MethodType
+  currency            Currency             @default(rub)
+  commissionPayin     Float
+  commissionPayout    Float
+  maxPayin            Float
+  minPayin            Float
+  maxPayout           Float
+  minPayout           Float
+  chancePayin         Float
+  chancePayout        Float
+  isEnabled           Boolean              @default(true)
+  rateSource          RateSource           @default(bybit)
+  merchantMethods     MerchantMethod[]
+  payouts             Payout[]
+  rateSettings        RateSettings?
+  traderMerchants     TraderMerchant[]
+  Transaction         Transaction[]
+  transactionAttempts TransactionAttempt[]
+  aggregatorMethodFees AggregatorMethodFee[]
+  aggregatorMerchants  AggregatorMerchant[]
+}
+
+model MerchantMethod {
+  id         String   @id @default(cuid())
+  merchantId String
+  methodId   String
+  isEnabled  Boolean  @default(true)
+  merchant   Merchant @relation(fields: [merchantId], references: [id])
+  method     Method   @relation(fields: [methodId], references: [id])
+
+  @@unique([merchantId, methodId])
+}
+
+model Transaction {
+  id                    String              @id @default(cuid())
+  numericId             Int                 @unique @default(autoincrement())
+  merchantId            String
+  amount                Float
+  assetOrBank           String
+  orderId               String
+  currency              String?
+  userId                String
+  userIp                String?
+  callbackUri           String
+  successUri            String
+  failUri               String
+  type                  TransactionType     @default(IN)
+  expired_at            DateTime
+  commission            Float
+  clientName            String
+  status                Status              @default(CREATED)
+  error                 String?
+  rate                  Float?
+  traderId              String?
+  aggregatorId          String?
+  aggregatorOrderId     String?             // Агрегаторское orderId для колбэков
+  aggregatorResponse    Json?               // Полный ответ от агрегатора
+  aggregatorRequisites  Json?               // Реквизиты от агрегатора
+  isMock                Boolean             @default(false)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  acceptedAt            DateTime?
+  methodId              String
+  bankDetailId          String?
+  settlementId          String?
+  kkkOperation          KkkOperationType?
+  adjustedRate          Float?
+  calculatedCommission  Float?
+  callbackSent          Boolean             @default(false)
+  feeInPercent          Float?
+  frozenUsdtAmount      Float?
+  kkkPercent            Float?
+  matchedNotificationId String?
+  merchantRate          Float?
+  traderProfit          Float?
+  /// Идентификатор клиента от мерчанта
+  clientIdentifier      String?
+  /// Прибыль от мерчанта (ценник мерчанта) в USDT
+  merchantProfit        Float?
+  /// Прибыль от агрегатора (ценник агрегатора) в USDT  
+  aggregatorProfit      Float?
+  /// Общая прибыль платформы (merchantProfit - aggregatorProfit) в USDT
+  platformProfit        Float?
+  /// Ставка на вход от мерчанта в момент создания сделки (%)
+  merchantFeeInPercent  Float?
+  /// Ставка на вход от агрегатора в момент создания сделки (%)
+  aggregatorFeeInPercent Float?
+  /// Курс USDT/RUB на момент создания сделки
+  usdtRubRate          Float?
+  dealDispute           DealDispute?
+  receipts              Receipt[]
+  callbackHistory       CallbackHistory[]
+  aggregatorCallbackLogs AggregatorCallbackLog[]
+  requisites            BankDetail?         @relation(fields: [bankDetailId], references: [id])
+  matchedNotification   Notification?       @relation(fields: [matchedNotificationId], references: [id])
+  merchant              Merchant            @relation(fields: [merchantId], references: [id])
+  method                Method              @relation(fields: [methodId], references: [id])
+  settlement            MerchantSettlement? @relation(fields: [settlementId], references: [id])
+  trader                User?               @relation("TraderTransactions", fields: [traderId], references: [id])
+  aggregator            Aggregator?         @relation("AggregatorTransactions", fields: [aggregatorId], references: [id])
+  aggregatorDisputes    AggregatorDispute[] @relation("AggregatorDisputes")
+
+  @@index([bankDetailId, amount])
+  @@index([merchantId, clientIdentifier])
+}
+
+model CallbackHistory {
+  id            String   @id @default(cuid())
+  transactionId String
+  url           String
+  payload       Json
+  response      String?
+  statusCode    Int?
+  error         String?
+  createdAt     DateTime @default(now())
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  
+  @@index([transactionId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model PayoutCallbackHistory {
+  id         String   @id @default(cuid())
+  payoutId   String
+  url        String
+  payload    Json
+  response   String?
+  statusCode Int?
+  error      String?
+  createdAt  DateTime @default(now())
+  payout     Payout   @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+
+  @@index([payoutId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model Receipt {
+  id            String      @id @default(cuid())
+  transactionId String
+  fileData      String
+  fileName      String
+  isChecked     Boolean     @default(false)
+  isFake        Boolean     @default(false)
+  isAuto        Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+}
+
+model WalletTransaction {
+  id              String       @id @default(cuid())
+  externalTxId    String       @unique
+  walletId        String
+  amount          Float
+  senderAddress   String?
+  receiverAddress String?
+  timestamp       DateTime
+  status          String
+  type            String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  wallet          CryptoWallet @relation(fields: [walletId], references: [id])
+}
+
+model BankDetail {
+  id                   String              @id @default(cuid())
+  userId               String
+  methodType           MethodType
+  bankType             BankType
+  cardNumber           String
+  recipientName        String
+  phoneNumber          String?
+  minAmount            Float
+  maxAmount            Float
+  totalAmountLimit     Float               @default(0) // Общий лимит суммы (если 0 - без лимита)
+  currentTotalAmount   Float               @default(0) // Текущая использованная сумма
+  intervalMinutes      Int                 @default(0)
+  operationLimit       Int                 @default(0) // Лимит по количеству операций без срока давности (0 - без лимита)
+  sumLimit             Float               @default(0) // Лимит на общую сумму сделок в рублях (0 - без лимита)
+  /// Предпочтительный тип трафика для этого реквизита
+  trafficPreference    RequisiteTrafficPreference @default(ANY)
+  counterpartyLimit    Int                 @default(0) // Лимит на количество уникальных контрагентов (0 - без лимита)
+  isArchived           Boolean             @default(false)
+  isActive             Boolean             @default(true)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  deviceId             String?
+  device               Device?             @relation(fields: [deviceId], references: [id])
+  user                 User                @relation(fields: [userId], references: [id])
+  folders              RequisiteOnFolder[]
+  Transaction          Transaction[]
+}
+
+model MasterWallet {
+  id          String                 @id @default(cuid())
+  address     String                 @unique
+  privateHex  String                 @map("private_hex")
+  balanceUsdt Float                  @default(0) @map("balance_usdt")
+  balanceTrx  Float                  @default(0) @map("balance_trx")
+  createdAt   DateTime               @default(now()) @map("created_at")
+  updatedAt   DateTime               @updatedAt @map("updated_at")
+  transfers   MasterWalletTransfer[]
+}
+
+model MasterWalletTransfer {
+  id             String       @id @default(cuid())
+  masterWalletId String       @map("master_wallet_id")
+  amount         Float
+  toAddress      String       @map("to_address")
+  asset          String
+  status         String
+  txHash         String?      @map("tx_hash")
+  error          String?
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  masterWallet   MasterWallet @relation(fields: [masterWalletId], references: [id])
+}
+
+model SystemConfig {
+  key   String @id
+  value String
+}
+
+model RateSettings {
+  id           String           @id @default(cuid())
+  methodId     String           @unique
+  kkkPercent   Float            @default(0)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  kkkOperation KkkOperationType @default(MINUS)
+  method       Method           @relation(fields: [methodId], references: [id])
+}
+
+model TopupSettings {
+  id            String   @id @default(cuid())
+  walletAddress String
+  network       String   @default("TRC-20")
+  minAmount     Float    @default(10)
+  confirmations Int      @default(1)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+/// Настройки источника курсов
+model RateSourceConfig {
+  id                String   @id @default(cuid())
+  /// Тип источника курса (bybit, rapira и т.д.)
+  source            RateSource @unique
+  /// Название источника для отображения
+  displayName       String
+  /// Процент корректировки курса (может быть положительным или отрицательным)
+  kkkPercent        Float    @default(0)
+  /// Операция для применения корректировки (PLUS или MINUS)
+  kkkOperation      KkkOperationType @default(MINUS)
+  /// Активен ли источник
+  isActive          Boolean  @default(true)
+  /// Текущий базовый курс от источника
+  baseRate          Float?
+  /// Время последнего обновления курса
+  lastRateUpdate    DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  /// Связанные трейдеры через этот источник
+  traders           User[]   @relation("TraderRateSource")
+  /// Связанные мерчанты через этот источник
+  merchants         MerchantRateSource[]
+  /// Индивидуальные настройки трейдеров для этого источника
+  traderSettings    TraderRateSourceSettings[] @relation("TraderRateSourceSettings")
+  /// Связанные агрегаторы через этот источник
+  aggregators       AggregatorRateSource[]
+}
+
+/// Связь между мерчантом и источником курса
+model MerchantRateSource {
+  id                String   @id @default(cuid())
+  merchantId        String
+  rateSourceId      String
+  /// Передает ли мерчант свой курс (true) или использует курс из источника (false)
+  merchantProvidesRate Boolean @default(true)
+  /// Приоритет источника (для случаев с несколькими источниками)
+  priority          Int      @default(0)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  merchant          Merchant         @relation(fields: [merchantId], references: [id])
+  rateSource        RateSourceConfig @relation(fields: [rateSourceId], references: [id])
+  
+  @@unique([merchantId, rateSourceId])
+  @@index([merchantId])
+  @@index([rateSourceId])
+}
+
+/// Индивидуальные настройки трейдера для источника курса
+model TraderRateSourceSettings {
+  id                String   @id @default(cuid())
+  traderId          String
+  rateSourceId      String
+  /// Индивидуальный процент КК для трейдера
+  customKkkPercent  Float?
+  /// Операция для применения индивидуального процента (PLUS или MINUS)
+  customKkkOperation KkkOperationType? @default(MINUS)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  trader            User             @relation("TraderRateSourceSettings", fields: [traderId], references: [id], onDelete: Cascade)
+  rateSource        RateSourceConfig @relation("TraderRateSourceSettings", fields: [rateSourceId], references: [id], onDelete: Cascade)
+  
+  @@unique([traderId, rateSourceId])
+  @@index([traderId])
+  @@index([rateSourceId])
+}
+
+model CryptoWallet {
+  id           String              @id @default(cuid())
+  address      String              @unique
+  userId       String              @unique @map("user_id")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  isActive     Boolean             @default(true) @map("is_active")
+  user         User                @relation(fields: [userId], references: [id])
+  transactions WalletTransaction[]
+}
+
+model WalletCreationRequest {
+  id          String        @id @default(cuid())
+  userId      String
+  status      RequestStatus @default(PENDING)
+  address     String?
+  createdAt   DateTime      @default(now())
+  processedAt DateTime?
+  user        User          @relation(fields: [userId], references: [id])
+}
+
+model Device {
+  id                String         @id @default(cuid())
+  name              String
+  energy            Float?
+  ethernetSpeed     Float?
+  isOnline          Boolean?
+  token             String?        @unique
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  emulated          Boolean        @default(false)
+  fcmToken          String?
+  firstConnectionAt DateTime?
+  isWorking         Boolean        @default(false)
+  lastActiveAt      DateTime?
+  pushEnabled       Boolean        @default(true)
+  userId            String?
+  webPushAuth       String?
+  webPushEndpoint   String?
+  webPushP256dh     String?
+  bankDetails       BankDetail[]
+  user              User?          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  notifications     Notification[]
+
+  @@index([emulated, isOnline])
+  @@index([userId, pushEnabled])
+}
+
+model Notification {
+  id                  String           @id @default(cuid())
+  type                NotificationType
+  application         String?
+  title               String?
+  message             String
+  metadata            Json?
+  isRead              Boolean          @default(false)
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+  deviceId            String?
+  isProcessed         Boolean          @default(false)
+  packageName         String?
+  Device              Device?          @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  matchedTransactions Transaction[]
+
+  @@index([deviceId, createdAt(sort: Desc)])
+  @@index([isProcessed, type])
+}
+
+model BalanceTopUp {
+  id          String             @id @default(cuid())
+  userId      String
+  amount      Float
+  txHash      String
+  status      BalanceTopUpStatus @default(PENDING)
+  createdAt   DateTime           @default(now())
+  processedAt DateTime?
+  user        User               @relation(fields: [userId], references: [id])
+}
+
+model DepositRequest {
+  id            String        @id @default(cuid())
+  traderId      String
+  amountUSDT    Float
+  address       String
+  status        DepositStatus @default(PENDING)
+  txHash        String?
+  confirmations Int           @default(0)
+  type          DepositType   @default(BALANCE)
+  createdAt     DateTime      @default(now())
+  confirmedAt   DateTime?
+  processedAt   DateTime?
+  trader        User          @relation(fields: [traderId], references: [id])
+
+  @@index([traderId])
+  @@index([status])
+  @@index([txHash])
+}
+
+model WithdrawalRequest {
+  id              String                @id @default(cuid())
+  traderId        String
+  amountUSDT      Float
+  balanceType     WithdrawalBalanceType
+  walletAddress   String
+  network         String                @default("TRC-20")
+  status          WithdrawalStatus      @default(PENDING)
+  adminId         String?
+  rejectionReason String?
+  txHash          String?
+  processedAt     DateTime?
+  createdAt       DateTime              @default(now())
+  trader          User                  @relation(fields: [traderId], references: [id])
+
+  @@index([traderId])
+  @@index([status])
+  @@index([balanceType])
+}
+
+model RateSetting {
+  id        Int      @id @default(1)
+  value     Float
+  updatedAt DateTime @updatedAt
+  rapiraKkk Float    @default(0)
+  bybitKkk  Float    @default(0)
+}
+
+model MerchantSettlement {
+  id           String        @id @default(cuid())
+  merchantId   String
+  amount       Float
+  createdAt    DateTime      @default(now())
+  merchant     Merchant      @relation(fields: [merchantId], references: [id])
+  transactions Transaction[]
+}
+
+model Service {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  displayName  String
+  description  String?
+  status       ServiceStatus @default(STOPPED)
+  interval     Int           @default(5000)
+  enabled      Boolean       @default(true)
+  maxLogs      Int           @default(2500)
+  lastTick     DateTime?
+  lastError    String?
+  errorCount   Int           @default(0)
+  publicFields Json?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  logs         ServiceLog[]
+}
+
+model ServiceLog {
+  id        String   @id @default(cuid())
+  serviceId String
+  level     LogLevel @default(INFO)
+  message   String
+  data      Json?
+  createdAt DateTime @default(now())
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId, createdAt(sort: Desc)])
+}
+
+model TraderMerchant {
+  id                String   @id @default(cuid())
+  traderId          String
+  merchantId        String
+  methodId          String
+  feeIn             Float    @default(0)
+  feeOut            Float    @default(0)
+  isFeeInEnabled    Boolean  @default(true)
+  isFeeOutEnabled   Boolean  @default(true)
+  isMerchantEnabled Boolean  @default(true)
+  rateSource        RateSource?
+  /// Использовать ли гибкие ставки по промежуткам сумм вместо фиксированных feeIn/feeOut
+  useFlexibleRates  Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  merchant          Merchant @relation(fields: [merchantId], references: [id])
+  method            Method   @relation(fields: [methodId], references: [id])
+  trader            User     @relation(fields: [traderId], references: [id])
+  /// Промежутки ставок для данной связки трейдер-мерчант-метод
+  feeRanges         TraderMerchantFeeRange[]
+
+  @@unique([traderId, merchantId, methodId])
+}
+
+/// Модель для хранения гибких процентных ставок по промежуткам сумм
+model TraderMerchantFeeRange {
+  id                String         @id @default(cuid())
+  traderMerchantId  String
+  /// Минимальная сумма промежутка (включительно) в рублях
+  minAmount         Float
+  /// Максимальная сумма промежутка (включительно) в рублях
+  maxAmount         Float
+  /// Процентная ставка на вход для данного промежутка
+  feeInPercent      Float          @default(0)
+  /// Процентная ставка на выход для данного промежутка  
+  feeOutPercent     Float          @default(0)
+  isActive          Boolean        @default(true)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  traderMerchant    TraderMerchant @relation(fields: [traderMerchantId], references: [id], onDelete: Cascade)
+
+  @@index([traderMerchantId])
+  @@index([minAmount, maxAmount])
+}
+
+/// Модель для хранения отображаемых ставок трейдера (для UI)
+model TraderDisplayRate {
+  id              String   @id @default(cuid())
+  traderId        String
+  /// Процентная ставка для отображения
+  stakePercent    Float
+  /// Минимальная сумма диапазона (₽)
+  amountFrom      Float
+  /// Максимальная сумма диапазона (₽)
+  amountTo        Float
+  /// Порядок отображения
+  sortOrder       Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  trader          User     @relation("TraderDisplayRates", fields: [traderId], references: [id], onDelete: Cascade)
+
+  @@index([traderId])
+  @@index([sortOrder])
+}
+
+model Agent {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  password       String
+  name           String
+  commissionRate Float           @default(0)
+  trcWallet      String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  agentPayouts   AgentPayout[]
+  sessions       AgentSession[]
+  agentTraders   AgentTrader[]
+  supportTickets SupportTicket[]
+  teams          Team[]
+}
+
+model AgentSession {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  ip        String
+  createdAt DateTime @default(now())
+  expiredAt DateTime
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id])
+}
+
+model AgentTrader {
+  id        String   @id @default(cuid())
+  agentId   String
+  traderId  String
+  teamId    String?
+  createdAt DateTime @default(now())
+  agent     Agent    @relation(fields: [agentId], references: [id])
+  team      Team?    @relation(fields: [teamId], references: [id])
+  trader    User     @relation(fields: [traderId], references: [id])
+
+  @@unique([agentId, traderId])
+}
+
+model AgentPayout {
+  id          String    @id @default(cuid())
+  agentId     String
+  amount      Float
+  isPaid      Boolean   @default(false)
+  paidAt      DateTime?
+  txHash      String?
+  periodStart DateTime
+  periodEnd   DateTime
+  earnings    Float
+  createdAt   DateTime  @default(now())
+  agent       Agent     @relation(fields: [agentId], references: [id])
+}
+
+model Team {
+  id           String        @id @default(cuid())
+  name         String
+  agentId      String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  agentTraders AgentTrader[]
+  agent        Agent         @relation(fields: [agentId], references: [id])
+  traders      User[]
+
+  @@unique([agentId, name])
+}
+
+model AppVersion {
+  id          String   @id @default(cuid())
+  version     String   @unique
+  description String?
+  fileUrl     String
+  fileName    String
+  fileSize    Int
+  isPrimary   Boolean  @default(false)
+  uploadedAt  DateTime @default(now())
+  uploadedBy  String
+}
+
+model SupportTicket {
+  id         String                @id @default(cuid())
+  subject    String
+  status     SupportTicketStatus   @default(OPEN)
+  priority   SupportTicketPriority @default(NORMAL)
+  userType   UserType
+  userId     String?
+  merchantId String?
+  agentId    String?
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  closedAt   DateTime?
+  messages   SupportMessage[]
+  agent      Agent?                @relation(fields: [agentId], references: [id])
+  merchant   Merchant?             @relation(fields: [merchantId], references: [id])
+  user       User?                 @relation(fields: [userId], references: [id])
+
+  @@index([userType, status])
+  @@index([createdAt])
+}
+
+model SupportMessage {
+  id            String        @id @default(cuid())
+  ticketId      String
+  message       String
+  isFromSupport Boolean       @default(false)
+  authorName    String?
+  attachments   String[]
+  createdAt     DateTime      @default(now())
+  readAt        DateTime?
+  ticket        SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+}
+
+model ServiceConfig {
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  serviceKey String   @unique
+  config     Json
+  isEnabled  Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+}
+
+model Payout {
+  id                   String              @id @default(cuid())
+  numericId            Int                 @unique @default(autoincrement())
+  merchantId           String
+  traderId             String?
+  amount               Float
+  amountUsdt           Float
+  total                Float
+  totalUsdt            Float
+  rate                 Float
+  wallet               String
+  bank                 String
+  isCard               Boolean
+  status               PayoutStatus        @default(CREATED)
+  createdAt            DateTime            @default(now())
+  acceptedAt           DateTime?
+  expireAt             DateTime
+  confirmedAt          DateTime?
+  cancelledAt          DateTime?
+  proofFiles           String[]
+  disputeFiles         String[]
+  disputeMessage       String?
+  cancelReason         String?
+  merchantWebhookUrl   String?
+  merchantMetadata     Json?
+  acceptanceTime       Int                 @default(5)
+  processingTime       Int                 @default(15)
+  pushNotificationTime Int?
+  pushSent             Boolean             @default(false)
+  direction            PayoutDirection     @default(OUT)
+  merchantRate         Float?
+  rateDelta            Float               @default(0)
+  feePercent           Float               @default(0)
+  cancelReasonCode     String?
+  externalReference    String?
+  sumToWriteOffUSDT    Float?
+  previousTraderIds    String[]            @default([])
+  methodId             String?
+  profitAmount         Float               @default(0)
+  /// Идентификатор клиента от мерчанта
+  clientIdentifier     String?
+  merchant             Merchant            @relation(fields: [merchantId], references: [id])
+  method               Method?             @relation(fields: [methodId], references: [id])
+  trader               User?               @relation("TraderPayouts", fields: [traderId], references: [id])
+  rateAudits           PayoutRateAudit[]
+  disputes             WithdrawalDispute[]
+  blacklistEntries     PayoutBlacklist[]
+  cancellationHistory  PayoutCancellationHistory[]
+  callbackHistory      PayoutCallbackHistory[]
+
+  @@index([status, traderId])
+  @@index([merchantId, status])
+  @@index([createdAt])
+  @@index([expireAt])
+  @@index([direction, status])
+  @@index([methodId])
+  @@index([merchantId, clientIdentifier])
+}
+
+model PayoutRateAudit {
+  id            String   @id @default(cuid())
+  payoutId      String
+  oldRateDelta  Float
+  newRateDelta  Float
+  oldFeePercent Float
+  newFeePercent Float
+  adminId       String
+  timestamp     DateTime @default(now())
+  payout        Payout   @relation(fields: [payoutId], references: [id])
+
+  @@index([payoutId])
+  @@index([timestamp])
+}
+
+model TelegramLink {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  code      String    @unique
+  chatId    String?
+  isLinked  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  linkedAt  DateTime?
+
+  @@index([code])
+  @@index([expiresAt])
+}
+
+model Folder {
+  id         String              @id @default(uuid())
+  traderId   String
+  title      String
+  createdAt  DateTime            @default(now())
+  isActive   Boolean             @default(true)
+  trader     User                @relation(fields: [traderId], references: [id])
+  requisites RequisiteOnFolder[]
+
+  @@index([traderId])
+}
+
+model RequisiteOnFolder {
+  folderId    String
+  requisiteId String
+  folder      Folder     @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  requisite   BankDetail @relation(fields: [requisiteId], references: [id], onDelete: Cascade)
+
+  @@id([folderId, requisiteId])
+}
+
+model WithdrawalDispute {
+  id         String                     @id @default(uuid())
+  payoutId   String
+  merchantId String
+  traderId   String
+  status     WithdrawalDisputeStatus    @default(OPEN)
+  createdAt  DateTime                   @default(now())
+  updatedAt  DateTime                   @updatedAt
+  resolvedAt DateTime?
+  resolution String?
+  merchant   Merchant                   @relation(fields: [merchantId], references: [id])
+  payout     Payout                     @relation(fields: [payoutId], references: [id])
+  trader     User                       @relation(fields: [traderId], references: [id])
+  messages   WithdrawalDisputeMessage[]
+
+  @@index([payoutId])
+  @@index([merchantId])
+  @@index([traderId])
+  @@index([status])
+}
+
+model WithdrawalDisputeMessage {
+  id          String                  @id @default(uuid())
+  disputeId   String
+  senderId    String
+  senderType  DisputeSenderType
+  message     String
+  createdAt   DateTime                @default(now())
+  attachments WithdrawalDisputeFile[]
+  dispute     WithdrawalDispute       @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+
+  @@index([disputeId])
+  @@index([createdAt])
+}
+
+model WithdrawalDisputeFile {
+  id        String                   @id @default(uuid())
+  messageId String
+  filename  String
+  url       String
+  size      Int
+  mimeType  String
+  createdAt DateTime                 @default(now())
+  message   WithdrawalDisputeMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model DealDispute {
+  id         String               @id @default(dbgenerated("gen_random_uuid()"))
+  dealId     String               @unique
+  merchantId String
+  traderId   String
+  status     DealDisputeStatus    @default(OPEN)
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  resolvedAt DateTime?
+  resolution String?
+  deal       Transaction          @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  merchant   Merchant             @relation(fields: [merchantId], references: [id])
+  trader     User                 @relation(fields: [traderId], references: [id])
+  messages   DealDisputeMessage[]
+
+  @@index([dealId])
+  @@index([merchantId])
+  @@index([traderId])
+  @@index([status])
+}
+
+model DealDisputeMessage {
+  id          String            @id @default(dbgenerated("gen_random_uuid()"))
+  disputeId   String
+  senderId    String
+  senderType  DisputeSenderType
+  message     String
+  createdAt   DateTime          @default(now())
+  attachments DealDisputeFile[]
+  dispute     DealDispute       @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+
+  @@index([disputeId])
+  @@index([senderId])
+}
+
+model DealDisputeFile {
+  id        String             @id @default(dbgenerated("gen_random_uuid()"))
+  messageId String
+  filename  String
+  url       String
+  size      Int
+  mimeType  String
+  createdAt DateTime           @default(now())
+  message   DealDisputeMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model Message {
+  id              String              @id @default(cuid())
+  traderId        String
+  subject         String
+  content         String
+  type            MessageType         @default(SYSTEM)
+  priority        MessagePriority     @default(NORMAL)
+  isRead          Boolean             @default(false)
+  isStarred       Boolean             @default(false)
+  metadata        Json?
+  relatedEntityId String?
+  relatedEntity   String?
+  createdAt       DateTime            @default(now())
+  readAt          DateTime?
+  trader          User                @relation(fields: [traderId], references: [id])
+  attachments     MessageAttachment[]
+
+  @@index([traderId, isRead])
+  @@index([traderId, createdAt(sort: Desc)])
+  @@index([relatedEntityId, relatedEntity])
+}
+
+model MessageAttachment {
+  id        String   @id @default(cuid())
+  messageId String
+  filename  String
+  url       String
+  size      Int
+  mimeType  String
+  createdAt DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model Idea {
+  id         String     @id @default(cuid())
+  userId     String
+  title      String
+  content    String
+  status     IdeaStatus @default(PENDING)
+  adminNotes String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PayoutFilters {
+  id              String     @id @default(cuid())
+  userId          String     @unique
+  trafficTypes    String[]   @default([])
+  bankTypes       BankType[] @default([])
+  maxPayoutAmount Float      @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  user            User       @relation(fields: [userId], references: [id])
+}
+
+model TrafficSettings {
+  id                 String      @id @default(cuid())
+  userId             String      @unique
+  isEnabled          Boolean     @default(false)
+  maxCounterparties  Int         @default(5)
+  trafficType        TrafficType @default(PRIMARY)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  user               User        @relation(fields: [userId], references: [id])
+}
+
+model TransactionAttempt {
+  id            String   @id @default(cuid())
+  transactionId String?
+  merchantId    String
+  methodId      String
+  amount        Float
+  status        String?
+  success       Boolean  @default(false)
+  errorCode     String?
+  message       String?
+  timestamp     DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  merchant      Merchant @relation(fields: [merchantId], references: [id])
+  method        Method   @relation(fields: [methodId], references: [id])
+
+  @@index([merchantId])
+  @@index([createdAt])
+}
+
+model SettleRequest {
+  id                   String              @id @default(cuid())
+  merchantId           String
+  amount               Float
+  currency             String              @default("RUB")
+  status               SettleRequestStatus @default(PENDING)
+  comment              String?
+  rejectionReason      String?
+  requestedAt          DateTime            @default(now())
+  processedAt          DateTime?
+  processedBy          String?
+  exchangeRate         Float?
+  usdtAmount           Float?
+  amountUsdt           Float?
+  rate                 Float?
+  tradeId              String?
+  usdtEquivalent       Float?
+  countInRubEquivalent Boolean             @default(false)
+  rateType             String?
+  merchantRate         Float?
+  settlementAddress    String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime
+  merchant             Merchant            @relation(fields: [merchantId], references: [id])
+
+  @@index([merchantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model merchant_emulator_logs {
+  id          String   @id
+  timestamp   DateTime @default(now())
+  level       String
+  message     String
+  merchant_id String
+  batch_id    String?
+  details     Json?
+
+  @@index([batch_id])
+  @@index([merchant_id])
+  @@index([timestamp])
+}
+
+model PayoutBlacklist {
+  id        String   @id @default(cuid())
+  payoutId  String
+  traderId  String
+  reason    String?
+  createdAt DateTime @default(now())
+  payout    Payout   @relation(fields: [payoutId], references: [id])
+  
+  @@unique([payoutId, traderId])
+  @@index([payoutId])
+  @@index([traderId])
+}
+
+model PayoutCancellationHistory {
+  id        String   @id @default(cuid())
+  payoutId  String
+  traderId  String
+  reason    String
+  createdAt DateTime @default(now())
+  payout    Payout   @relation(fields: [payoutId], references: [id])
+  trader    User     @relation(fields: [traderId], references: [id])
+
+  @@index([payoutId])
+  @@index([traderId])
+  @@index([createdAt])
+}
+
+model MerchantRequestLog {
+  id         String              @id @default(cuid())
+  merchantId String
+  type       MerchantRequestType
+  data       Json
+  createdAt  DateTime            @default(now())
+  merchant   Merchant            @relation(fields: [merchantId], references: [id])
+
+  @@index([merchantId])
+  @@index([createdAt])
+}
+
+model WellbitBankMapping {
+  id              Int      @id @default(autoincrement())
+  wellbitBankCode String   @unique
+  wellbitBankName String
+  ourBankName     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Aggregator {
+  id              String               @id @default(cuid())
+  email           String               @unique
+  password        String
+  name            String
+  apiToken        String               @unique               // Токен для подписи исходящих запросов к агрегатору
+  callbackToken   String               @unique               // Токен для верификации входящих callback'ов от агрегатора
+  customApiToken  String?                                    // Кастомный API токен, задаваемый вручную (если null, используется сгенерированный apiToken)
+  apiBaseUrl      String?              // Базовый URL для API агрегатора
+  balanceUsdt     Float                @default(0)           // Основной баланс для списания
+  depositUsdt     Float                @default(0)           // Страховой депозит (минимум 1000 USDT)
+  frozenBalance   Float                @default(0)           // Замороженный баланс для активных сделок
+  balanceNoRequisite Float             @default(0)           // Баланс NO_REQUISITE сделок
+  balanceSuccess  Float                @default(0)           // Баланс успешных сделок
+  balanceExpired  Float                @default(0)           // Баланс истекших сделок
+  totalPlatformProfit Float            @default(0)           // Общая прибыль платформы с этого агрегатора
+  /// Вход в USDT на сумму, которую мы отдали трафик (эту сумму нам должен засетлить провайдер), уже с учетом % от агрегатора
+  totalUsdtIn     Float                @default(0)
+  /// Выход в USDT на сумму, которую провайдер провел выплаты, и то что мы ему должны засетлить, уже с учетом % от агрегатора
+  totalUsdtOut    Float                @default(0)
+  /// Разница между входом и выходом USDT
+  usdtDifference  Float                @default(0)
+  isActive        Boolean              @default(true)
+  priority        Int                  @default(0)          // Приоритет для fallback маршрутизации (меньше = выше приоритет)
+  maxSlaMs        Int                  @default(2000)       // Максимальное время ответа в мс (SLA) - 2 секунды
+  minBalance      Float                @default(0)          // Минимальный баланс для работы
+  maxDailyVolume  Float?               // Максимальный дневной объем транзакций
+  currentDailyVolume Float             @default(0)          // Текущий дневной объем
+  lastVolumeReset DateTime             @default(now())      // Последний сброс дневного объема
+  twoFactorSecret String?              // Секрет для 2FA
+  twoFactorEnabled Boolean             @default(false)
+  requiresInsuranceDeposit Boolean     @default(true)        // Требуется ли страховой депозит для сделок
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  lastPriorityChangeBy String?         // ID админа, изменившего приоритет
+  lastPriorityChangeAt DateTime?       // Время последнего изменения приоритета
+  
+  // PSPWare интеграция
+  apiSchema        AggregatorApiSchema  @default(DEFAULT)    // Тип API схемы
+  pspwareApiKey    String?              // API ключ для PSPWare
+  enableRandomization Boolean          @default(false)       // Включить рандомизацию сумм
+  randomizationType PSPWareRandomizationType @default(NONE) // Тип рандомизации
+  
+  // Chase project integration
+  isChaseProject   Boolean             @default(false)       // Флаг, что это другой экземпляр Chase
+  isChaseCompatible Boolean            @default(false)       // Флаг совместимости с Chase API (для платформ-клонов)
+  
+  // Method IDs for our platform aggregators
+  sbpMethodId      String?             // Method ID для SBP платежей
+  c2cMethodId      String?             // Method ID для C2C платежей
+  
+  // Связи
+  sessions        AggregatorSession[]
+  transactions    Transaction[]        @relation("AggregatorTransactions")
+  disputes        AggregatorDispute[]
+  apiLogs         AggregatorApiLog[]
+  callbackLogs    AggregatorCallbackLog[]
+  depositRequests AggregatorDepositRequest[]
+  integrationLogs AggregatorIntegrationLog[]
+  methodFees      AggregatorMethodFee[]
+  rateSources     AggregatorRateSource[]
+  merchants       AggregatorMerchant[] // Мерчанты агрегатора
+  settlements     AggregatorSettlement[] // Сеттлы агрегатора
+  
+  @@index([email])
+  @@index([apiToken])
+  @@index([callbackToken])
+  @@index([priority])
+  @@index([isActive])
+  @@index([depositUsdt])
+}
+
+model AggregatorSession {
+  id           String     @id @default(cuid())
+  aggregatorId String
+  token        String     @unique
+  ip           String
+  userAgent    String?
+  createdAt    DateTime   @default(now())
+  expiresAt    DateTime
+  aggregator   Aggregator @relation(fields: [aggregatorId], references: [id], onDelete: Cascade)
+  
+  @@index([aggregatorId])
+  @@index([token])
+}
+
+model AggregatorDepositRequest {
+  id            String               @id @default(cuid())
+  aggregatorId  String
+  amountUSDT    Float
+  address       String               // адрес кошелька для пополнения
+  status        AggregatorDepositStatus @default(PENDING)
+  txHash        String?              // хеш транзакции от агрегатора
+  confirmations Int                  @default(0)
+  createdAt     DateTime             @default(now())
+  confirmedAt   DateTime?            // когда подтверждено админом
+  processedAt   DateTime?            // когда обработано
+  aggregator    Aggregator           @relation(fields: [aggregatorId], references: [id], onDelete: Cascade)
+  
+  @@index([aggregatorId])
+  @@index([status])
+}
+
+enum AggregatorDepositStatus {
+  PENDING
+  CHECKING
+  CONFIRMED
+  FAILED
+  EXPIRED
+}
+
+model AggregatorDispute {
+  id              String            @id @default(cuid())
+  transactionId   String
+  aggregatorId    String
+  merchantId      String            // ID мерчанта для связи
+  status          DealDisputeStatus @default(OPEN)
+  subject         String
+  description     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  resolvedAt      DateTime?
+  
+  // Связи
+  transaction     Transaction       @relation("AggregatorDisputes", fields: [transactionId], references: [id])
+  aggregator      Aggregator        @relation(fields: [aggregatorId], references: [id])
+  merchant        Merchant          @relation("AggregatorDisputes", fields: [merchantId], references: [id])
+  messages        AggregatorDisputeMessage[]
+  
+  @@index([transactionId])
+  @@index([aggregatorId])
+  @@index([status])
+}
+
+model AggregatorDisputeMessage {
+  id        String            @id @default(cuid())
+  disputeId String
+  senderId  String           // ID агрегатора или админа
+  senderType DisputeSenderType
+  message   String
+  fileUrls  String[]         // Массив ссылок на файлы
+  createdAt DateTime          @default(now())
+  dispute   AggregatorDispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  
+  @@index([disputeId])
+}
+
+model AggregatorApiLog {
+  id           String     @id @default(cuid())
+  aggregatorId String
+  endpoint     String     // Какой эндпоинт агрегатора вызывали
+  method       String     // HTTP метод
+  requestData  Json?      // Отправленные данные
+  responseData Json?      // Полученный ответ
+  statusCode   Int?       // HTTP статус код
+  error        String?    // Текст ошибки, если была
+  duration     Int?       // Время выполнения в мс
+  createdAt    DateTime   @default(now())
+  aggregator   Aggregator @relation(fields: [aggregatorId], references: [id])
+  
+  @@index([aggregatorId])
+  @@index([createdAt])
+}
+
+model AggregatorCallbackLog {
+  id            String      @id @default(cuid())
+  aggregatorId  String
+  transactionId String?
+  type          String      // Тип callback'а (status_update, dispute_init, amount_change)
+  payload       Json        // Полный payload callback'а
+  response      String?     // Ответ от нашей системы
+  statusCode    Int?        // HTTP статус код ответа
+  error         String?     // Ошибка, если была
+  createdAt     DateTime    @default(now())
+  
+  aggregator    Aggregator  @relation(fields: [aggregatorId], references: [id])
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  
+  @@index([aggregatorId])
+  @@index([transactionId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model AggregatorIntegrationLog {
+  id              String              @id @default(cuid())
+  aggregatorId    String
+  direction       IntegrationDirection // IN (от агрегатора к нам) или OUT (от нас к агрегатору)
+  eventType       String              // Тип события (deal_create, callback, dispute_create, mock_test и т.д.)
+  method          String              // HTTP метод
+  url             String              // Полный URL
+  headers         Json                // Заголовки (с маскированными токенами)
+  requestBody     Json?               // Тело запроса
+  responseBody    Json?               // Тело ответа
+  statusCode      Int?                // HTTP код ответа
+  responseTimeMs  Int?                // Время ответа в мс
+  slaViolation    Boolean             @default(false) // Нарушен ли SLA
+  idempotencyKey  String?             // Ключ идемпотентности
+  ourDealId       String?             // Наш ID сделки
+  partnerDealId   String?             // ID сделки у агрегатора
+  error           String?             // Текст ошибки
+  metadata        Json?               // Дополнительные данные
+  createdAt       DateTime            @default(now())
+  
+  aggregator      Aggregator          @relation(fields: [aggregatorId], references: [id])
+  
+  @@index([aggregatorId])
+  @@index([direction])
+  @@index([eventType])
+  @@index([ourDealId])
+  @@index([partnerDealId])
+  @@index([createdAt(sort: Desc)])
+  @@index([slaViolation])
+}
+
+enum IntegrationDirection {
+  IN
+  OUT
+}
+
+model AggregatorMethodFee {
+  id            String     @id @default(cuid())
+  aggregatorId  String
+  methodId      String
+  feePercent    Float      @default(0)    // Процент на вход для этого метода
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  aggregator    Aggregator @relation(fields: [aggregatorId], references: [id], onDelete: Cascade)
+  method        Method     @relation(fields: [methodId], references: [id])
+  
+  @@unique([aggregatorId, methodId])
+  @@index([aggregatorId])
+  @@index([methodId])
+}
+
+model AggregatorRateSource {
+  id              String           @id @default(cuid())
+  aggregatorId    String
+  rateSourceId    String
+  kkkPercent      Float            @default(0)      // Индивидуальный ККК для этого агрегатора
+  kkkOperation    KkkOperationType @default(MINUS)  // Операция (PLUS/MINUS)
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  aggregator      Aggregator       @relation(fields: [aggregatorId], references: [id], onDelete: Cascade)
+  rateSource      RateSourceConfig @relation(fields: [rateSourceId], references: [id])
+  
+  @@unique([aggregatorId])
+  @@index([aggregatorId])
+  @@index([rateSourceId])
+}
+
+model AggregatorMerchant {
+  id                String         @id @default(cuid())
+  aggregatorId      String
+  merchantId        String
+  methodId          String
+  feeIn             Float          @default(0)       // Процентная ставка на вход
+  feeOut            Float          @default(0)       // Процентная ставка на выход  
+  isFeeInEnabled    Boolean        @default(true)    // Включен ли вход
+  isFeeOutEnabled   Boolean        @default(true)    // Включен ли выход
+  isTrafficEnabled  Boolean        @default(true)    // Включен ли трафик на этого мерчанта
+  rateSource        RateSource?                      // Источник курса для этой связки
+  useFlexibleRates  Boolean        @default(false)   // Использовать ли гибкие ставки
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  aggregator        Aggregator     @relation(fields: [aggregatorId], references: [id], onDelete: Cascade)
+  merchant          Merchant       @relation(fields: [merchantId], references: [id])
+  method            Method         @relation(fields: [methodId], references: [id])
+  feeRanges         AggregatorMerchantFeeRange[] // Гибкие ставки по диапазонам
+  
+  @@unique([aggregatorId, merchantId, methodId])
+  @@index([aggregatorId])
+  @@index([merchantId])
+  @@index([methodId])
+}
+
+model AggregatorMerchantFeeRange {
+  id                     String              @id @default(cuid())
+  aggregatorMerchantId   String
+  minAmount              Float               // Минимальная сумма диапазона (₽)
+  maxAmount              Float               // Максимальная сумма диапазона (₽)
+  feeInPercent           Float               @default(0) // Процент на вход
+  feeOutPercent          Float               @default(0) // Процент на выход
+  isActive               Boolean             @default(true)
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  
+  aggregatorMerchant     AggregatorMerchant  @relation(fields: [aggregatorMerchantId], references: [id], onDelete: Cascade)
+  
+  @@index([aggregatorMerchantId])
+  @@index([minAmount, maxAmount])
+}
+
+model AggregatorSettlement {
+  id              String         @id @default(cuid())
+  aggregatorId    String
+  amount          Float          // Сумма сеттла в USDT
+  direction       SettlementDirection // IN (нам засеттлили) или OUT (мы засеттлили)
+  description     String?        // Описание/комментарий
+  date            DateTime       // Дата сеттла
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  createdBy       String?        // ID админа, создавшего запись
+  
+  aggregator      Aggregator     @relation(fields: [aggregatorId], references: [id], onDelete: Cascade)
+  
+  @@index([aggregatorId])
+  @@index([date])
+  @@index([direction])
+}
+
+enum SettlementDirection {
+  IN   // Агрегатор засеттлил нам
+  OUT  // Мы засеттлили агрегатору
+}
+
+enum WithdrawalDisputeStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED_SUCCESS
+  RESOLVED_FAIL
+  CANCELLED
+}
+
+enum DisputeSenderType {
+  MERCHANT
+  TRADER
+  ADMIN
+  AGGREGATOR
+}
+
+enum DealDisputeStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED_SUCCESS
+  RESOLVED_FAIL
+  CANCELLED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+}
+
+enum MethodType {
+  upi
+  c2ckz
+  c2cuz
+  c2caz
+  c2c
+  sbp
+  spay
+  tpay
+  vpay
+  apay
+  m2ctj
+  m2ntj
+  m2csber
+  m2ctbank
+  connectc2c
+  connectsbp
+  nspk
+  ecom
+  crypto
+}
+
+enum Status {
+  CREATED
+  IN_PROGRESS
+  DISPUTE
+  EXPIRED
+  READY
+  MILK
+  CANCELED
+}
+
+enum TransactionType {
+  IN
+  OUT
+}
+
+enum Currency {
+  rub
+  usdt
+}
+
+enum RateSource {
+  bybit
+  rapira
+}
+
+enum BankType {
+  SBERBANK
+  RAIFFEISEN
+  GAZPROMBANK
+  POCHTABANK
+  VTB
+  ROSSELKHOZBANK
+  ALFABANK
+  URALSIB
+  LOKOBANK
+  AKBARS
+  MKB
+  SPBBANK
+  MTSBANK
+  PROMSVYAZBANK
+  OZONBANK
+  RENAISSANCE
+  OTPBANK
+  AVANGARD
+  VLADBUSINESSBANK
+  TAVRICHESKIY
+  FORABANK
+  BCSBANK
+  HOMECREDIT
+  BBRBANK
+  CREDITEUROPE
+  RNKB
+  UBRIR
+  GENBANK
+  SINARA
+  ABSOLUTBANK
+  MTSMONEY
+  SVOYBANK
+  TRANSKAPITALBANK
+  DOLINSK
+  TBANK
+  SOVCOMBANK
+  ROSBANK
+  UNICREDIT
+  CITIBANK
+  RUSSIANSTANDARD
+  OTKRITIE
+  OTP
+  RNCB
+  RAIFFEISENBANK
+  URALSIBBANK
+  UBRRBANK
+  CIFRABANK
+  DOMRFBANK
+  VTBBANK
+  AKBARSBANK
+  HOMEBANK
+  RENCREDITBANK
+  ZENITBANK
+  RSHBBANK
+  PSBANK
+  RSBANK
+  AVANGARDBANK
+  SOLIDBANK
+  DVBANK
+  UNICREDITBANK
+  CMRBANK
+  SVOIBANK
+  INGOBANK
+  MKBBANK
+  MODULBANK
+  YANDEXBANK
+  UNISTREAMBANK
+  BSPB
+  KUBANKREDIT
+  NOVIKOM
+  AGROROSBANK
+  KLOOKVABANK
+  TKBBANK
+  SNGBBANK
+  ROSTFINANCEBANK
+  AMRABANK
+  METALLINVESTBANK
+  ABRBANK
+  NORVIKBANK
+  AURORABANK
+  ATBBANK
+  SDMBANK
+  MPBANK
+  NSBANK
+  TOCHKA
+  TATSOTSBANK
+  SEVERGAZBANK
+  YOOMONEY
+  SINARABANK
+  CUPISWALLET
+  FINSB
+  BANKDOLINSK
+  UMBANK
+  PSKB
+  EXPOBANK
+  KOSHELEVBANK
+  BANKOFKAZAN
+  NSKBL
+  IPB
+  LOCKOBANK
+  BANKORANGE
+  ABANK
+  ZHIVAGOBANK
+  POIDEMBANK
+  PRIMBANK
+  VBRR
+  GASENERGO
+  BANKKALUGA
+  TENDERBANK
+  MTSDENGI
+  DTB1
+  CHELINVEST
+  AKCEPT
+  AMOBILE
+  PSBST
+  UNITEDBANK
+  BSDBANK
+  DATABANK
+  HLYNOV
+  LANTA
+  NATIONALSTANDARTBANK
+  CREDITURAL
+  TRANSSTROYBANK
+  BANKVL
+  PRIOVTB
+  NICO_BANK
+  ITURUPBANK
+  REALISTBANK
+  AVITO
+  UNIBANK
+  AVTOTORGBANK
+  BANKRMP
+  BGFBANK
+  ENERGOBANK
+  FINAMBANK
+  TAVRICH
+  WILDBERRIES
+  DCTJ
+  CENTRINVEST
+  FINBANK
+  DRIVECLICKBANK
+  KAMKOMBANK
+  ELPLAT
+  BANCAINTESA
+  ICBRU
+  DALENABANK
+  AKIBANK
+  KBHMB
+  ESKHATA
+  SPITAMENBANK
+  ENERGOTRANSBANK
+  ORIENBANK
+  ECONOMBANK
+  ARVANDBANK
+  SOCIUMBANK
+  VLBB
+  BANKSARATOV
+  FORSHTADT
+  EVROFINANCE
+  ANKB
+  CHELINDBANK
+  AMONATBONK
+  EUROALLIANCE
+  INBANK
+  TAWHIDBANK
+  RUSNARBANK
+  M10
+  PUBANK
+  ORBANK
+  BANKELITA
+  GAZTRANSBANK
+  VASL
+  INVB
+  KUZBANK
+  BKTB
+  TKPB
+  VKPAY
+  SOLID
+  MATIN
+  ALBANK
+  KOMPANION
+  BAKAI
+  IBT
+  TELCELL
+  CHBRR
+  ALFABANKBY
+  ALIF
+  MARITIMEBANK
+  HUMOTJ
+  LIFETJ
+  AZIZIMOLIYA
+  FASTSHIFT
+  GARANTBANK
+  THBANK
+  NOVOBANK
+  VTBAM
+  IBAM
+  MONETA
+  OLABANK
+  METCOM
+  ROCKETBANK
+  SBIBANKLLC
+  IPAKYULIBANK
+  MBANK
+  UZUMBANK
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  AppNotification
+  SMS
+}
+
+enum BalanceTopUpStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DepositStatus {
+  PENDING
+  CHECKING
+  CONFIRMED
+  FAILED
+  EXPIRED
+}
+
+enum DepositType {
+  BALANCE
+  INSURANCE
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum WithdrawalBalanceType {
+  TRUST
+  COMPENSATION
+  PROFIT_DEALS
+  PROFIT_PAYOUTS
+  REFERRAL
+}
+
+enum ServiceStatus {
+  RUNNING
+  STOPPED
+  ERROR
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_REPLY
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum UserType {
+  TRADER
+  MERCHANT
+  AGENT
+}
+
+enum PayoutStatus {
+  CREATED
+  AVAILABLE
+  PROCESSING
+  CHECKING
+  SUCCESS
+  FAILED
+  EXPIRED
+  CANCELLED
+  DISPUTE
+  ACTIVE
+  COMPLETED
+  DISPUTED
+}
+
+enum PayoutDirection {
+  IN
+  OUT
+}
+
+enum MessageType {
+  SYSTEM
+  TRANSACTION
+  PAYOUT
+  ACCOUNT
+  SECURITY
+  DISPUTE
+  DEPOSIT
+  WITHDRAWAL
+  DEVICE
+  ANNOUNCEMENT
+}
+
+enum MessagePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum KkkOperationType {
+  PLUS
+  MINUS
+}
+
+enum IdeaStatus {
+  PENDING
+  REVIEWING
+  ACCEPTED
+  REJECTED
+  IMPLEMENTED
+}
+
+enum SettleRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum MerchantRequestType {
+  TRANSACTION_IN
+  PAYOUT_CREATE
+}
+
+enum TrafficType {
+  PRIMARY   // Первичный трафик (первая сделка от клиента)
+  SECONDARY // Вторичный трафик (2 или более сделок от клиента)
+  VIP       // VIP трафик (10 или более сделок от клиента)
+}
+
+/// Тип трафика, разрешенный для реквизита
+enum RequisiteTrafficPreference {
+  ANY       // Любой трафик, без фильтрации (включая без clientIdentifier)
+  PRIMARY   // Только первичный
+  SECONDARY // Только вторичный
+  VIP       // Только VIP
+}
+
+enum AggregatorApiSchema {
+  DEFAULT   // Стандартная схема API
+  PSPWARE   // PSPWare API схема
+}
+
+enum PSPWareRandomizationType {
+  FULL      // Полная рандомизация (+-2 рубля)
+  PARTIAL   // Частичная рандомизация (кратные 500 +-2 рубля)
+  NONE      // Без рандомизации
+}

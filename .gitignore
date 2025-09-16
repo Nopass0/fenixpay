@@ -1,0 +1,160 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Testing
+coverage/
+.nyc_output
+
+# Production
+build/
+dist/
+.next/
+out/
+/target
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local env files
+.env
+.env*.local
+!.env.example
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+**/.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+**/*.trace
+**/*.zip
+**/*.tar.gz
+**/*.tgz
+
+
+# Backups
+backups/
+
+# Upload directories
+uploads/
+backend/uploads/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Server info
+server-info.txt
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Package files
+package-lock.json
+**/*.bun
+bun.lockb
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+
+# Temporary - websocket server
+websocket-server/
+
+# Android build files
+apk/build/
+apk/.gradle/
+apk/app/build/
+apk/local.properties
+apk/.idea/
+apk/*.iml
+apk/**/*.iml
+apk/app/*.apk
+apk/gradle/wrapper/gradle-wrapper.jar
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# JDK tools (pre-installed, should not be versioned)
+apk/tools/jdk-17.0.2/
+
+# Emulator directories and build files
+merchant-emulator/
+emulator/
+**/merchant-emulator/
+**/emulator/
+
+# Emulator build artifacts
+merchant-emulator/build/
+merchant-emulator/dist/
+merchant-emulator/node_modules/
+merchant-emulator/.next/
+merchant-emulator/out/
+merchant-emulator/package-lock.json
+merchant-emulator/yarn.lock
+merchant-emulator/pnpm-lock.yaml
+merchant-emulator/bun.lockb
+
+emulator/build/
+emulator/dist/
+emulator/node_modules/
+emulator/.next/
+emulator/out/
+emulator/package-lock.json
+emulator/yarn.lock
+emulator/pnpm-lock.yaml
+emulator/bun.lockb
+
+# All lock files from emulator directories
+**/merchant-emulator/package-lock.json
+**/merchant-emulator/yarn.lock
+**/merchant-emulator/pnpm-lock.yaml
+**/merchant-emulator/bun.lockb
+**/emulator/package-lock.json
+**/emulator/yarn.lock
+**/emulator/pnpm-lock.yaml
+**/emulator/bun.lockb
+
+*.lock
+*.lockb
+
+/apk/apk
+/apk/apk-builds-2025-07-28
+
+/merchant-emulator/target

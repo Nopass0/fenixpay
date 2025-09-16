@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход для мерчанта - Chase Payment System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .logo p {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .password-toggle {
+            position: relative;
+        }
+        
+        .toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #7f8c8d;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .submit-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .submit-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .error-message {
+            background-color: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .success-message {
+            background-color: #efe;
+            border: 1px solid #cfc;
+            color: #3a3;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 2px solid #3498db;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .api-info {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 13px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+        
+        .api-info a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        .api-info a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>Chase Payment</h1>
+            <p>Панель управления мерчанта</p>
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="token">API токен</label>
+                <div class="password-toggle">
+                    <input 
+                        type="password" 
+                        id="token" 
+                        name="token" 
+                        placeholder="Введите ваш API токен"
+                        required
+                        autocomplete="off"
+                    >
+                    <button type="button" class="toggle-btn" onclick="togglePassword()">
+                        Показать
+                    </button>
+                </div>
+            </div>
+            
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Войти
+            </button>
+        </form>
+        
+        <div class="api-info">
+            <p>Для получения API токена обратитесь к администратору</p>
+            <p style="margin-top: 10px;">
+                <a href="#" onclick="showApiDocs()">Документация API</a>
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Конфигурация
+        const API_BASE_URL = window.location.origin || 'http://localhost:3000';
+        
+        // Элементы DOM
+        const form = document.getElementById('loginForm');
+        const tokenInput = document.getElementById('token');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        
+        // Переключение видимости пароля
+        function togglePassword() {
+            const type = tokenInput.type === 'password' ? 'text' : 'password';
+            tokenInput.type = type;
+            event.target.textContent = type === 'password' ? 'Показать' : 'Скрыть';
+        }
+        
+        // Показать сообщение об ошибке
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+        
+        // Показать сообщение об успехе
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+        
+        // Скрыть все сообщения
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+        
+        // Обработка отправки формы
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const token = tokenInput.value.trim();
+            
+            if (!token) {
+                showError('Пожалуйста, введите API токен');
+                return;
+            }
+            
+            // Отключаем кнопку и показываем загрузку
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Вход... <span class="loading"></span>';
+            hideMessages();
+            
+            try {
+                // Отправляем запрос на вход
+                const response = await fetch(`${API_BASE_URL}/merchant/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Сохраняем данные сессии
+                    localStorage.setItem('merchantSessionToken', data.sessionToken);
+                    localStorage.setItem('merchantData', JSON.stringify(data.merchant));
+                    
+                    showSuccess('Вход выполнен успешно! Перенаправление...');
+                    
+                    // Перенаправляем на дашборд через 1 секунду
+                    setTimeout(() => {
+                        window.location.href = '/merchant/dashboard';
+                    }, 1000);
+                } else {
+                    // Показываем ошибку
+                    showError(data.error || 'Ошибка входа');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('Ошибка соединения с сервером');
+            } finally {
+                // Включаем кнопку обратно
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Войти';
+            }
+        });
+        
+        // Показать документацию API
+        function showApiDocs() {
+            alert('Документация API будет доступна после входа в систему');
+        }
+        
+        // Проверяем, есть ли уже сессия
+        window.addEventListener('load', async () => {
+            const sessionToken = localStorage.getItem('merchantSessionToken');
+            
+            if (sessionToken) {
+                try {
+                    // Проверяем валидность сессии
+                    const response = await fetch(`${API_BASE_URL}/merchant/auth/me`, {
+                        headers: {
+                            'Authorization': `Bearer ${sessionToken}`,
+                        },
+                    });
+                    
+                    if (response.ok) {
+                        // Сессия валидна, перенаправляем на дашборд
+                        window.location.href = '/merchant/dashboard';
+                    } else {
+                        // Сессия невалидна, очищаем данные
+                        localStorage.removeItem('merchantSessionToken');
+                        localStorage.removeItem('merchantData');
+                    }
+                } catch (error) {
+                    console.error('Session check error:', error);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

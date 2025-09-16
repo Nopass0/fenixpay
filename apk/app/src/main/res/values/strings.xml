@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CHA$E</string>
+    <string name="scan_qr_code">Scan QR Code</string>
+    <string name="enter_code_manually">Enter code manually</string>
+    <string name="device_code">Device code</string>
+    <string name="connect">Connect</string>
+    <string name="cancel">Cancel</string>
+    <string name="connecting">Connecting...</string>
+    <string name="connection_success">Device connected successfully</string>
+    <string name="connection_failed">Connection failed</string>
+    <string name="status">Status</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="server">Server</string>
+    <string name="battery_level">Battery level</string>
+    <string name="network_speed">Network speed</string>
+    <string name="last_update">Last update</string>
+    <string name="debug_menu">Debug</string>
+    <string name="device_info">Device info</string>
+    <string name="logs">Logs</string>
+    <string name="test_notification">Test notification</string>
+    <string name="create_test_notification">Create test notification</string>
+    <string name="notification_listener_service">CHA$E Notification Service</string>
+    <string name="permission_required">Permission required</string>
+    <string name="grant_permission">Grant permission</string>
+    <string name="camera_permission_message">Camera access is required to scan QR codes</string>
+    <string name="notification_permission_message">Notification access is required to monitor banking notifications</string>
+    <string name="test_notification_title">Test payment</string>
+    <string name="test_notification_text">Received 1000 ₽ from *1234</string>
+    <string name="test_notification_sent">Test notification sent</string>
+    <string name="scanning_qr">Scanning QR code...</string>
+    <string name="point_camera_at_qr">Point camera at QR code</string>
+    <string name="notifications_monitored">Notifications monitored</string>
+    <string name="device_status">Device status</string>
+    <string name="server_connection">Server connection</string>
+    <string name="monitoring_active">Monitoring active</string>
+    <string name="refresh">Refresh</string>
+    <string name="settings">Settings</string>
+    <string name="about">About</string>
+</resources>
