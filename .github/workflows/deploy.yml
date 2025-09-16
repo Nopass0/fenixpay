@@ -92,6 +92,8 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
+          timeout: 900
+          command_timeout: 600
           script: |
             rm -rf "${{ secrets.PROJECT_PATH }}" || true
             mkdir -p "${{ secrets.PROJECT_PATH }}"
@@ -116,6 +118,8 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
+          timeout: 900
+          command_timeout: 600
           script: |
             set -e
 
