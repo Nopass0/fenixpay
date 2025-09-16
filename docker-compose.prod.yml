@@ -19,9 +19,9 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend/uploads:/app/uploads
-    mem_limit: 1g
-    mem_reservation: 512m
-    cpus: '0.5'
+    # mem_limit: 1g
+    # mem_reservation: 512m
+    # cpus: '0.5'
 
   frontend:
     build:
@@ -40,9 +40,9 @@ services:
     networks:
       - chase_network
     restart: unless-stopped
-    mem_limit: 768m
-    mem_reservation: 384m
-    cpus: '0.5'
+    # mem_limit: 768m
+    # mem_reservation: 384m
+    # cpus: '0.5'
 
   nginx:
     build:
@@ -63,8 +63,8 @@ services:
     networks:
       - chase_network
     restart: unless-stopped
-    mem_limit: 256m
-    mem_reservation: 128m
+    # mem_limit: 256m
+    # mem_reservation: 128m
 
 networks:
   chase_network:
