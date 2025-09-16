@@ -236,6 +236,29 @@ jobs:
             # Navigate to project directory
             cd ${{ secrets.PROJECT_PATH }}
 
+            # Fix line endings for all shell scripts before building
+            echo "Fixing line endings for shell scripts..."
+            if [ -f scripts/fix-line-endings.sh ]; then
+              chmod +x scripts/fix-line-endings.sh
+              ./scripts/fix-line-endings.sh
+            else
+              # Fallback: manually fix critical scripts
+              echo "fix-line-endings.sh not found, fixing critical scripts manually..."
+              find . -type f -name "*.sh" -exec sed -i 's/\r$//' {} \;
+              # Fix docker-entrypoint.sh specifically
+              if [ -f backend/scripts/docker-entrypoint.sh ]; then
+                sed -i 's/\r$//' backend/scripts/docker-entrypoint.sh
+                sed -i '1s/^\xEF\xBB\xBF//' backend/scripts/docker-entrypoint.sh
+                chmod +x backend/scripts/docker-entrypoint.sh
+              fi
+              # Fix nginx entrypoint if exists
+              if [ -f nginx/docker-entrypoint.sh ]; then
+                sed -i 's/\r$//' nginx/docker-entrypoint.sh
+                sed -i '1s/^\xEF\xBB\xBF//' nginx/docker-entrypoint.sh
+                chmod +x nginx/docker-entrypoint.sh
+              fi
+            fi
+
             # Stop existing containers first
             docker_compose -f docker-compose.prod.yml down || true
 

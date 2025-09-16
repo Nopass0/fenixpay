@@ -1,0 +1,47 @@
+# Enforce Unix line endings for shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Enforce Unix line endings for Dockerfiles
+Dockerfile text eol=lf
+Dockerfile.* text eol=lf
+
+# Enforce Unix line endings for docker-compose files
+docker-compose.yml text eol=lf
+docker-compose.*.yml text eol=lf
+
+# Enforce Unix line endings for .env files
+.env text eol=lf
+.env.* text eol=lf
+
+# Common text files
+*.md text
+*.txt text
+*.json text
+*.yml text
+*.yaml text
+
+# Frontend files
+*.js text
+*.jsx text
+*.ts text
+*.tsx text
+*.css text
+*.scss text
+*.html text
+*.svg text
+
+# Backend files
+*.prisma text
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
