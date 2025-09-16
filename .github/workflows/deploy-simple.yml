@@ -1,0 +1,128 @@
+name: Deploy to Production (Simple)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          timeout: 60m
+          command_timeout: 60m
+          script: |
+            set -e
+
+            # Navigate to project directory
+            cd ${{ secrets.PROJECT_PATH }}
+
+            # Pull latest changes
+            git pull origin main
+
+            # Fix line endings for all shell scripts before building
+            echo "Fixing line endings for shell scripts..."
+            if [ -f scripts/fix-line-endings.sh ]; then
+              chmod +x scripts/fix-line-endings.sh
+              ./scripts/fix-line-endings.sh
+            else
+              # Fallback: manually fix critical scripts
+              echo "fix-line-endings.sh not found, fixing critical scripts manually..."
+              find . -type f -name "*.sh" -exec sed -i 's/\r$//' {} \;
+              # Fix docker-entrypoint.sh specifically
+              if [ -f backend/scripts/docker-entrypoint.sh ]; then
+                sed -i 's/\r$//' backend/scripts/docker-entrypoint.sh
+                sed -i '1s/^\xEF\xBB\xBF//' backend/scripts/docker-entrypoint.sh
+                chmod +x backend/scripts/docker-entrypoint.sh
+              fi
+            fi
+
+            # Stop existing containers first
+            docker-compose -f docker-compose.prod.yml down || true
+
+            # Create .env file for production
+            cat > .env << 'EOF'
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            SUPER_ADMIN_KEY=${{ secrets.SUPER_ADMIN_KEY }}
+            ADMIN_IPS=${{ secrets.ADMIN_IPS }}
+            NODE_ENV=production
+            EOF
+
+            # Validate DATABASE_URL is set
+            if ! grep -q "DATABASE_URL=" .env || grep -q "DATABASE_URL=$" .env; then
+              echo "ERROR: DATABASE_URL is not properly set in secrets"
+              exit 1
+            fi
+
+            # Ensure SSL certificates directory exists
+            mkdir -p ssl
+
+            # Check if SSL certificates exist and use appropriate nginx config
+            if [ -f "/chasepay/ssl/certificate.crt" ]; then
+              echo "SSL certificates found, using HTTPS configuration"
+              rm -f nginx/conf.d/default-http-only.conf
+            else
+              echo "No SSL certificates found, using HTTP-only configuration"
+              rm -f nginx/conf.d/default.conf
+              if [ -f nginx/conf.d/default-http-only.conf ]; then
+                cp nginx/conf.d/default-http-only.conf nginx/conf.d/default.conf
+              fi
+            fi
+
+            # Remove old containers and images
+            docker-compose -f docker-compose.prod.yml rm -f
+
+            # Clean up disk space before building
+            docker system prune -af --volumes || true
+
+            # Build containers
+            echo "Building containers..."
+            docker-compose -f docker-compose.prod.yml build --no-cache
+
+            echo "Starting containers..."
+            docker-compose -f docker-compose.prod.yml up -d
+
+            # Show initial container status
+            echo "Container status after startup:"
+            docker-compose -f docker-compose.prod.yml ps
+
+            # Wait for backend to be ready
+            echo "Waiting for backend to initialize..."
+            sleep 60
+
+            # Check if backend container is running
+            if ! docker ps | grep -q "chase_backend"; then
+              echo "Backend container is not running after startup"
+              docker-compose -f docker-compose.prod.yml logs backend
+              exit 1
+            fi
+
+            # Initialize service records
+            echo "Initializing service records..."
+            docker-compose -f docker-compose.prod.yml exec -T backend bun run scripts/init-all-services.ts || echo "Service initialization failed, continuing..."
+
+            # Disable emulator services
+            echo "Disabling emulator services..."
+            docker-compose -f docker-compose.prod.yml exec -T backend bun run scripts/disable-emulator-services.ts || echo "Failed to disable emulator services, continuing..."
+
+            # Verify all services are running
+            echo "Verifying services..."
+            docker-compose -f docker-compose.prod.yml ps
+
+            # Clean up disk space
+            docker system prune -af
+
+            echo "✅ Deployment completed successfully!"

@@ -118,12 +118,32 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             set -e
-            
+
             # Navigate to project directory
             cd ${{ secrets.PROJECT_PATH }}
-            
+
+            # Pull latest changes
+            git pull origin main
+
+            # Fix line endings for all shell scripts before building
+            echo "Fixing line endings for shell scripts..."
+            if [ -f scripts/fix-line-endings.sh ]; then
+              chmod +x scripts/fix-line-endings.sh
+              ./scripts/fix-line-endings.sh
+            else
+              # Fallback: manually fix critical scripts
+              echo "fix-line-endings.sh not found, fixing critical scripts manually..."
+              find . -type f -name "*.sh" -exec sed -i 's/\r$//' {} \;
+              # Fix docker-entrypoint.sh specifically
+              if [ -f backend/scripts/docker-entrypoint.sh ]; then
+                sed -i 's/\r$//' backend/scripts/docker-entrypoint.sh
+                sed -i '1s/^\xEF\xBB\xBF//' backend/scripts/docker-entrypoint.sh
+                chmod +x backend/scripts/docker-entrypoint.sh
+              fi
+            fi
+
             # Stop existing containers first
-            docker compose -f docker-compose.prod.yml down || true
+            docker-compose -f docker-compose.prod.yml down || true
             
             # Create .env file for production
             cat > .env << 'EOF'
@@ -158,7 +178,7 @@ jobs:
             fi
             
             # Remove old containers and images
-            docker compose -f docker-compose.prod.yml rm -f
+            docker-compose -f docker-compose.prod.yml rm -f
             # Clean up disk space and memory before building
             docker system prune -af --volumes || true
             # Free up memory by clearing build cache
@@ -166,28 +186,28 @@ jobs:
             
             # Build with memory-efficient options
             echo "Building containers with memory optimization..."
-            DOCKER_BUILDKIT=1 docker compose -f docker-compose.prod.yml build --no-cache --memory 1g || {
-              echo "Build failed, trying without memory limit..."
-              docker compose -f docker-compose.prod.yml build --no-cache
+            DOCKER_BUILDKIT=1 docker-compose -f docker-compose.prod.yml build --no-cache || {
+              echo "Build failed, retrying..."
+              docker-compose -f docker-compose.prod.yml build --no-cache
             }
             
             echo "Starting containers..."
-            if ! docker compose -f docker-compose.prod.yml up -d; then
+            if ! docker-compose -f docker-compose.prod.yml up -d; then
               echo "Failed to start containers"
-              docker compose -f docker-compose.prod.yml logs
+              docker-compose -f docker-compose.prod.yml logs
               exit 1
             fi
             
             # Show initial container status
             echo "Container status after startup:"
-            docker compose -f docker-compose.prod.yml ps
+            docker-compose -f docker-compose.prod.yml ps
 
             # Backend will handle migrations automatically on startup via entrypoint script
             echo "Waiting for backend to initialize and apply migrations..."
             
             # Monitor backend logs for migration status
             echo "Monitoring backend startup and migration process..."
-            docker compose -f docker-compose.prod.yml logs -f backend &
+            docker-compose -f docker-compose.prod.yml logs -f backend &
             LOGS_PID=$!
             
             # Give migrations time to run
@@ -199,7 +219,7 @@ jobs:
             # Check if backend container is running
             if ! docker ps | grep -q "chase_backend"; then
               echo "Backend container is not running after startup"
-              docker compose -f docker-compose.prod.yml logs backend
+              docker-compose -f docker-compose.prod.yml logs backend
               exit 1
             fi
             
@@ -210,12 +230,12 @@ jobs:
               # Check if backend container is running first
               if ! docker ps | grep -q "chase_backend"; then
                 echo "Backend container stopped running, checking logs..."
-                docker compose -f docker-compose.prod.yml logs backend
+                docker-compose -f docker-compose.prod.yml logs backend
                 exit 1
               fi
               
               # Try to connect to health endpoint
-              if docker compose -f docker-compose.prod.yml exec -T backend curl -f http://localhost:3001/health >/dev/null 2>&1; then
+              if docker-compose -f docker-compose.prod.yml exec -T backend curl -f http://localhost:3001/health >/dev/null 2>&1; then
                 echo "Backend container is ready and healthy"
                 break
               fi
@@ -227,22 +247,22 @@ jobs:
             if [ $timeout -le 0 ]; then
               echo "Backend container failed to start properly"
               echo "Container status:"
-              docker compose -f docker-compose.prod.yml ps
+              docker-compose -f docker-compose.prod.yml ps
               echo "Backend logs:"
-              docker compose -f docker-compose.prod.yml logs backend
+              docker-compose -f docker-compose.prod.yml logs backend
               exit 1
             fi
             
             
             # Initialize service records
             echo "Initializing service records..."
-            docker compose -f docker-compose.prod.yml exec -T backend bun run scripts/init-all-services.ts || {
+            docker-compose -f docker-compose.prod.yml exec -T backend bun run scripts/init-all-services.ts || {
               echo "Service initialization failed, continuing anyway..."
             }
             
             # Disable emulator services
             echo "Disabling emulator services..."
-            docker compose -f docker-compose.prod.yml exec -T backend bun run scripts/disable-emulator-services.ts || {
+            docker-compose -f docker-compose.prod.yml exec -T backend bun run scripts/disable-emulator-services.ts || {
               echo "Failed to disable emulator services, continuing anyway..."
             }
             
@@ -250,19 +270,19 @@ jobs:
             echo "Verifying services..."
             if ! docker ps | grep -q "chase_backend"; then
               echo "ERROR: Backend container is not running!"
-              docker compose logs backend
+              docker-compose logs backend
               exit 1
             fi
             
             if ! docker ps | grep -q "chase_frontend"; then
               echo "ERROR: Frontend container is not running!"
-              docker compose logs frontend
+              docker-compose logs frontend
               exit 1
             fi
             
             if ! docker ps | grep -q "chase_nginx"; then
               echo "ERROR: Nginx container is not running!"
-              docker compose -f docker-compose.prod.yml logs nginx
+              docker-compose -f docker-compose.prod.yml logs nginx
               exit 1
             fi
             
@@ -271,21 +291,21 @@ jobs:
             echo ">>> Verifying all required columns exist..."bun
             
             echo -e "\nTransaction table columns:"
-            docker compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Transaction' AND column_name IN ('merchantRate', 'traderProfit', 'matchedNotificationId') ORDER BY column_name;" || echo "Failed to verify Transaction columns"
+            docker-compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Transaction' AND column_name IN ('merchantRate', 'traderProfit', 'matchedNotificationId') ORDER BY column_name;" || echo "Failed to verify Transaction columns"
             
             echo -e "\nPayout table columns:"
-            docker compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Payout' AND column_name IN ('methodId', 'profitAmount') ORDER BY column_name;" || echo "Failed to verify Payout columns"
+            docker-compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Payout' AND column_name IN ('methodId', 'profitAmount') ORDER BY column_name;" || echo "Failed to verify Payout columns"
             
             echo -e "\nNotification table columns:"
-            docker compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Notification' AND column_name = 'packageName' ORDER BY column_name;" || echo "Failed to verify Notification columns"
+            docker-compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Notification' AND column_name = 'packageName' ORDER BY column_name;" || echo "Failed to verify Notification columns"
             
             echo -e "\nNew tables verification:"
-            docker compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('SettleRequest', 'TransactionAttempt', 'merchant_emulator_logs') ORDER BY table_name;" || echo "Failed to verify new tables"
+            docker-compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('SettleRequest', 'TransactionAttempt', 'merchant_emulator_logs') ORDER BY table_name;" || echo "Failed to verify new tables"
             
             echo "=================================================================="
             
             # Show final status
-            docker compose -f docker-compose.prod.yml ps
+            docker-compose -f docker-compose.prod.yml ps
             
             # Clean up disk space
             docker system prune -af
