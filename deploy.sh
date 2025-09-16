@@ -34,12 +34,19 @@ fi
 # Ensure SSL certificates directory exists
 mkdir -p ssl
 
+SSL_DIR="ssl"
+
 # Choose nginx config based on SSL certificates
-if [ -f "ssl/certificate.crt" ]; then
-  echo "SSL certificates found, using HTTPS configuration"
+if [ -f "${SSL_DIR}/fullchain.crt" ] && [ -f "${SSL_DIR}/certificate.key" ]; then
+  echo "Fullchain SSL certificate found, using HTTPS configuration"
+  rm -f nginx/conf.d/default-http-only.conf
+elif [ -f "${SSL_DIR}/certificate.crt" ] && [ -f "${SSL_DIR}/certificate_ca.crt" ] && [ -f "${SSL_DIR}/certificate.key" ]; then
+  echo "Fullchain SSL certificate missing; combining certificate.crt and certificate_ca.crt"
+  cat "${SSL_DIR}/certificate.crt" "${SSL_DIR}/certificate_ca.crt" > "${SSL_DIR}/fullchain.crt"
+  chmod 644 "${SSL_DIR}/fullchain.crt" || true
   rm -f nginx/conf.d/default-http-only.conf
 else
-  echo "No SSL certificates found, using HTTP-only configuration"
+  echo "No complete SSL chain found, using HTTP-only configuration"
   rm -f nginx/conf.d/default.conf
   cp nginx/conf.d/default-http-only.conf nginx/conf.d/default.conf
   rm -f nginx/conf.d/default-http-only.conf
