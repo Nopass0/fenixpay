@@ -106,31 +106,31 @@ const projectConfigs: Record<ProjectType, ProjectConfig> = {
     name: "FenixPay",
     title: "FenixPay - Digital Payment Solutions",
     description: "Next-generation digital payment platform",
-    primaryColor: "#3b82f6", // blue-500
-    primaryColorRgb: "59 130 246",
-    accentColor: "#2563eb", // blue-600
+    primaryColor: "#f97316", // orange-500
+    primaryColorRgb: "249 115 22",
+    accentColor: "#ea580c", // orange-600
     theme: {
       light: {
-        primary: "#3b82f6",
-        primaryHover: "#2563eb",
+        primary: "#f97316",
+        primaryHover: "#ea580c",
         primaryForeground: "#ffffff",
-        accent: "#2563eb",
-        accentHover: "#1d4ed8",
+        accent: "#ea580c",
+        accentHover: "#c2410c",
         background: "#ffffff",
         foreground: "#0a0a0a",
-        muted: "#f6f6f6",
-        mutedForeground: "#737373",
+        muted: "#fff7ed",
+        mutedForeground: "#9a3412",
       },
       dark: {
-        primary: "#3b82f6",
-        primaryHover: "#60a5fa",
-        primaryForeground: "#0f1629",
-        accent: "#60a5fa",
-        accentHover: "#93c5fd",
+        primary: "#f97316",
+        primaryHover: "#fb923c",
+        primaryForeground: "#2c0f00",
+        accent: "#fb923c",
+        accentHover: "#fdba74",
         background: "#0a0a0a",
         foreground: "#ededed",
-        muted: "#1e293b",
-        mutedForeground: "#a3a3a3",
+        muted: "#2b1a0f",
+        mutedForeground: "#fcd9b6",
       },
     },
   },
@@ -191,30 +191,30 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
           root.style.setProperty("--sidebar-ring", "263 70% 50%");
         }
       } else if (project === "fenixpay") {
-        // Blue theme for FenixPay
-        root.style.setProperty("--primary", "221 83% 53%"); // blue-500
+        // Orange theme for FenixPay
+        root.style.setProperty("--primary", "24 94% 50%"); // orange-500
         root.style.setProperty("--primary-foreground", "0 0% 100%");
-        root.style.setProperty("--accent", "221 83% 48%"); // blue-600
+        root.style.setProperty("--accent", "24 94% 45%"); // orange-600
         root.style.setProperty("--accent-foreground", "0 0% 100%");
-        root.style.setProperty("--ring", "221 83% 53%");
-        root.style.setProperty("--primary-color", "#3b82f6");
-        root.style.setProperty("--primary-rgb", "59 130 246");
-        root.style.setProperty("--accent-color", "#2563eb");
+        root.style.setProperty("--ring", "24 94% 50%");
+        root.style.setProperty("--primary-color", "#f97316");
+        root.style.setProperty("--primary-rgb", "249 115 22");
+        root.style.setProperty("--accent-color", "#ea580c");
 
         // Dark mode adjustments for FenixPay
         if (root.classList.contains("dark")) {
-          root.style.setProperty("--primary", "221 83% 53%"); // blue in dark
-          root.style.setProperty("--accent", "221 91% 74%"); // blue-400
-          root.style.setProperty("--card", "222 84% 15%"); // blue-tinted dark
-          root.style.setProperty("--popover", "222 84% 15%");
-          root.style.setProperty("--muted", "215 28% 17%"); // slate-800
-          root.style.setProperty("--border", "215 32% 27%"); // slate-700
-          root.style.setProperty("--input", "215 32% 27%");
-          root.style.setProperty("--sidebar-background", "222 84% 5%");
-          root.style.setProperty("--sidebar-accent", "215 28% 17%");
-          root.style.setProperty("--sidebar-border", "215 32% 27%");
-          root.style.setProperty("--sidebar-primary", "221 83% 53%");
-          root.style.setProperty("--sidebar-ring", "221 83% 53%");
+          root.style.setProperty("--primary", "24 95% 62%"); // orange in dark
+          root.style.setProperty("--accent", "24 94% 55%"); // bright orange
+          root.style.setProperty("--card", "#1a0d05"); // warm dark background
+          root.style.setProperty("--popover", "#1a0d05");
+          root.style.setProperty("--muted", "#241207");
+          root.style.setProperty("--border", "#3c1a09");
+          root.style.setProperty("--input", "#3c1a09");
+          root.style.setProperty("--sidebar-background", "#120803");
+          root.style.setProperty("--sidebar-accent", "#1e0d05");
+          root.style.setProperty("--sidebar-border", "#3c1a09");
+          root.style.setProperty("--sidebar-primary", "24 94% 50%");
+          root.style.setProperty("--sidebar-ring", "24 94% 50%");
         }
       } else {
         // Green theme for Chase (default)
