@@ -119,22 +119,108 @@ jobs:
           script: |
             set -e
 
-            # Ensure Docker is available (supports sudo and legacy docker-compose)
-            if command -v docker >/dev/null 2>&1; then
+            # Ensure required Docker tooling is available (install when missing)
+            SUDO_CMD=""
+            if command -v sudo >/dev/null 2>&1; then
+              SUDO_CMD="sudo"
+            elif [ "$(id -u)" -ne 0 ]; then
+              echo "ERROR: Sudo is required to install Docker on this host"
+              exit 1
+            fi
+
+            run_with_priv() {
+              if [ -n "$SUDO_CMD" ]; then
+                "$SUDO_CMD" "$@"
+              else
+                "$@"
+              fi
+            }
+
+            docker_is_available() {
+              command -v docker >/dev/null 2>&1
+            }
+
+            docker_compose_present() {
+              if command -v docker >/dev/null 2>&1; then
+                if docker compose version >/dev/null 2>&1; then
+                  return 0
+                fi
+                if [ -n "$SUDO_CMD" ] && "$SUDO_CMD" docker compose version >/dev/null 2>&1; then
+                  return 0
+                fi
+              fi
+
+              if command -v docker-compose >/dev/null 2>&1; then
+                if docker-compose version >/dev/null 2>&1; then
+                  return 0
+                fi
+                if [ -n "$SUDO_CMD" ] && "$SUDO_CMD" docker-compose version >/dev/null 2>&1; then
+                  return 0
+                fi
+              fi
+
+              return 1
+            }
+
+            ensure_docker_installed() {
+              if docker_is_available; then
+                return
+              fi
+
+              if command -v apt-get >/dev/null 2>&1; then
+                echo "Docker not found, installing docker.io..."
+                run_with_priv apt-get update
+                run_with_priv apt-get install -y docker.io
+                run_with_priv systemctl enable --now docker || true
+              else
+                echo "ERROR: Docker not installed and automatic installation is not supported on this host"
+                exit 1
+              fi
+            }
+
+            ensure_docker_compose_installed() {
+              if docker_compose_present; then
+                return
+              fi
+
+              if command -v apt-get >/dev/null 2>&1; then
+                echo "Docker Compose not found, installing docker-compose-plugin..."
+                run_with_priv apt-get update
+                run_with_priv apt-get install -y docker-compose-plugin || true
+
+                if ! docker_compose_present; then
+                  echo "Falling back to legacy docker-compose package..."
+                  run_with_priv apt-get install -y docker-compose || true
+                fi
+              else
+                echo "ERROR: Docker Compose not installed and automatic installation is not supported on this host"
+                exit 1
+              fi
+
+              if ! docker_compose_present; then
+                echo "ERROR: Docker Compose installation failed"
+                exit 1
+              fi
+            }
+
+            ensure_docker_installed
+            ensure_docker_compose_installed
+
+            if docker info >/dev/null 2>&1; then
               DOCKER_CMD=(docker)
-            elif command -v sudo >/dev/null 2>&1 && sudo docker --version >/dev/null 2>&1; then
-              DOCKER_CMD=(sudo docker)
+            elif [ -n "$SUDO_CMD" ] && "$SUDO_CMD" docker info >/dev/null 2>&1; then
+              DOCKER_CMD=("$SUDO_CMD" docker)
             else
-              echo "ERROR: Docker is not installed or not in PATH"
+              echo "ERROR: Docker is installed but not accessible for this user"
               exit 1
             fi
 
             if "${DOCKER_CMD[@]}" compose version >/dev/null 2>&1; then
               COMPOSE_CMD=("${DOCKER_CMD[@]}" compose)
-            elif command -v docker-compose >/dev/null 2>&1; then
+            elif command -v docker-compose >/dev/null 2>&1 && docker-compose version >/dev/null 2>&1; then
               COMPOSE_CMD=(docker-compose)
-            elif command -v sudo >/dev/null 2>&1 && sudo docker-compose version >/dev/null 2>&1; then
-              COMPOSE_CMD=(sudo docker-compose)
+            elif [ -n "$SUDO_CMD" ] && command -v docker-compose >/dev/null 2>&1 && "$SUDO_CMD" docker-compose version >/dev/null 2>&1; then
+              COMPOSE_CMD=("$SUDO_CMD" docker-compose)
             else
               echo "ERROR: Docker Compose is not installed or not in PATH"
               exit 1
@@ -318,4 +404,3 @@ jobs:
             
             # Trigger APK build
             echo "Triggering APK build workflow..."
-            
