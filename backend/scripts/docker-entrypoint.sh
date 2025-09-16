@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 set -e
 
 echo "==================== CONTAINER STARTUP ===================="
@@ -7,10 +7,10 @@ echo "Starting backend container at $(date)"
 # Check environment
 echo "Environment check:"
 if [ -z "$DATABASE_URL" ]; then
-    echo "✗ DATABASE_URL is not set!"
+    echo "вњ— DATABASE_URL is not set!"
 else
     # Hide password in the URL for logging
-    echo "✓ DATABASE_URL is set (host: $(echo $DATABASE_URL | sed -E 's|.*://[^@]*@([^/:]*).*|\1|'))"
+    echo "вњ“ DATABASE_URL is set (host: $(echo $DATABASE_URL | sed -E 's|.*://[^@]*@([^/:]*).*|\1|'))"
 fi
 
 # Function to check database connection
@@ -18,16 +18,16 @@ check_db_connection() {
     echo "Checking database connection..."
     # First check if DATABASE_URL is set
     if [ -z "$DATABASE_URL" ]; then
-        echo "✗ DATABASE_URL environment variable is not set!"
+        echo "вњ— DATABASE_URL environment variable is not set!"
         return 1
     fi
     
     # Try to connect and capture the error
     if output=$(bunx prisma db execute --schema=./prisma/schema.prisma --stdin <<< "SELECT 1;" 2>&1); then
-        echo "✓ Database connection successful"
+        echo "вњ“ Database connection successful"
         return 0
     else
-        echo "✗ Database connection failed"
+        echo "вњ— Database connection failed"
         echo "Error details: $output" | head -5
         return 1
     fi
@@ -47,7 +47,7 @@ while [ $retry_count -lt $max_retries ]; do
 done
 
 if [ $retry_count -eq $max_retries ]; then
-    echo "✗ Database connection failed after $max_retries attempts"
+    echo "вњ— Database connection failed after $max_retries attempts"
     exit 1
 fi
 
@@ -116,25 +116,27 @@ SQL
 
 echo -e "\nApplying migrations..."
 if bunx prisma migrate deploy; then
-    echo "✓ Migrations applied successfully"
+    echo "вњ“ Migrations applied successfully"
 else
-    echo "✗ Migration deploy failed, trying db push with skip-generate..."
+    echo "вњ— Migration deploy failed, trying db push with skip-generate..."
     # In production, we need to accept data loss warnings to proceed
     if bunx prisma db push --skip-generate --accept-data-loss; then
-        echo "✓ Schema pushed successfully (with data loss acceptance)"
-        echo "⚠️  WARNING: Data loss warnings were accepted. Please verify the database state."
+        echo "Schema push completed with --accept-data-loss"
+        echo "WARNING: Data loss warnings were accepted. Please verify the database state manually."
+        echo "Marking migrations as applied to keep schema in sync..."
+        for migration_dir in $(ls prisma/migrations); do
+          bunx prisma migrate resolve --applied "$migration_dir" || true
+        done
     else
-        echo "✗ Both migration and db push failed"
+        echo "Both migration and db push failed"
         exit 1
     fi
-fi
-
 # Generate Prisma Client
 echo -e "\nGenerating Prisma Client..."
 if bunx prisma generate; then
-    echo "✓ Prisma Client generated successfully"
+    echo "вњ“ Prisma Client generated successfully"
 else
-    echo "✗ Failed to generate Prisma Client"
+    echo "вњ— Failed to generate Prisma Client"
     exit 1
 fi
 
