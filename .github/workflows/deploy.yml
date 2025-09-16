@@ -92,8 +92,6 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          timeout: 60m
-          command_timeout: 60m
           script: |
             rm -rf "${{ secrets.PROJECT_PATH }}" || true
             mkdir -p "${{ secrets.PROJECT_PATH }}"
@@ -118,150 +116,15 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          timeout: 60m
-          command_timeout: 60m
           script: |
             set -e
-
-            # Ensure required Docker tooling is available (install when missing)
-            SUDO_CMD=""
-            if command -v sudo >/dev/null 2>&1; then
-              SUDO_CMD="sudo"
-            elif [ "$(id -u)" -ne 0 ]; then
-              echo "ERROR: Sudo is required to install Docker on this host"
-              exit 1
-            fi
-
-            run_with_priv() {
-              if [ -n "$SUDO_CMD" ]; then
-                "$SUDO_CMD" "$@"
-              else
-                "$@"
-              fi
-            }
-
-            docker_is_available() {
-              command -v docker >/dev/null 2>&1
-            }
-
-            docker_compose_present() {
-              if command -v docker >/dev/null 2>&1; then
-                if docker compose version >/dev/null 2>&1; then
-                  return 0
-                fi
-                if [ -n "$SUDO_CMD" ] && "$SUDO_CMD" docker compose version >/dev/null 2>&1; then
-                  return 0
-                fi
-              fi
-
-              if command -v docker-compose >/dev/null 2>&1; then
-                if docker-compose version >/dev/null 2>&1; then
-                  return 0
-                fi
-                if [ -n "$SUDO_CMD" ] && "$SUDO_CMD" docker-compose version >/dev/null 2>&1; then
-                  return 0
-                fi
-              fi
-
-              return 1
-            }
-
-            ensure_docker_installed() {
-              if docker_is_available; then
-                return
-              fi
-
-              if command -v apt-get >/dev/null 2>&1; then
-                echo "Docker not found, installing docker.io..."
-                run_with_priv apt-get update
-                run_with_priv apt-get install -y docker.io
-                run_with_priv systemctl enable --now docker || true
-              else
-                echo "ERROR: Docker not installed and automatic installation is not supported on this host"
-                exit 1
-              fi
-            }
-
-            ensure_docker_compose_installed() {
-              if docker_compose_present; then
-                return
-              fi
-
-              if command -v apt-get >/dev/null 2>&1; then
-                echo "Docker Compose not found, installing docker-compose-plugin..."
-                run_with_priv apt-get update
-                run_with_priv apt-get install -y docker-compose-plugin || true
-
-                if ! docker_compose_present; then
-                  echo "Falling back to legacy docker-compose package..."
-                  run_with_priv apt-get install -y docker-compose || true
-                fi
-              else
-                echo "ERROR: Docker Compose not installed and automatic installation is not supported on this host"
-                exit 1
-              fi
-
-              if ! docker_compose_present; then
-                echo "ERROR: Docker Compose installation failed"
-                exit 1
-              fi
-            }
-
-            ensure_docker_installed
-            ensure_docker_compose_installed
-
-            if docker info >/dev/null 2>&1; then
-              DOCKER_CMD=(docker)
-            elif [ -n "$SUDO_CMD" ] && "$SUDO_CMD" docker info >/dev/null 2>&1; then
-              DOCKER_CMD=("$SUDO_CMD" docker)
-            else
-              echo "ERROR: Docker is installed but not accessible for this user"
-              exit 1
-            fi
-
-            if "${DOCKER_CMD[@]}" compose version >/dev/null 2>&1; then
-              COMPOSE_CMD=("${DOCKER_CMD[@]}" compose)
-            elif command -v docker-compose >/dev/null 2>&1 && docker-compose version >/dev/null 2>&1; then
-              COMPOSE_CMD=(docker-compose)
-            elif [ -n "$SUDO_CMD" ] && command -v docker-compose >/dev/null 2>&1 && "$SUDO_CMD" docker-compose version >/dev/null 2>&1; then
-              COMPOSE_CMD=("$SUDO_CMD" docker-compose)
-            else
-              echo "ERROR: Docker Compose is not installed or not in PATH"
-              exit 1
-            fi
-
-            docker_cmd() { "${DOCKER_CMD[@]}" "$@"; }
-            docker_compose() { "${COMPOSE_CMD[@]}" "$@"; }
-
+            
             # Navigate to project directory
             cd ${{ secrets.PROJECT_PATH }}
-
-            # Fix line endings for all shell scripts before building
-            echo "Fixing line endings for shell scripts..."
-            if [ -f scripts/fix-line-endings.sh ]; then
-              chmod +x scripts/fix-line-endings.sh
-              ./scripts/fix-line-endings.sh
-            else
-              # Fallback: manually fix critical scripts
-              echo "fix-line-endings.sh not found, fixing critical scripts manually..."
-              find . -type f -name "*.sh" -exec sed -i 's/\r$//' {} \;
-              # Fix docker-entrypoint.sh specifically
-              if [ -f backend/scripts/docker-entrypoint.sh ]; then
-                sed -i 's/\r$//' backend/scripts/docker-entrypoint.sh
-                sed -i '1s/^\xEF\xBB\xBF//' backend/scripts/docker-entrypoint.sh
-                chmod +x backend/scripts/docker-entrypoint.sh
-              fi
-              # Fix nginx entrypoint if exists
-              if [ -f nginx/docker-entrypoint.sh ]; then
-                sed -i 's/\r$//' nginx/docker-entrypoint.sh
-                sed -i '1s/^\xEF\xBB\xBF//' nginx/docker-entrypoint.sh
-                chmod +x nginx/docker-entrypoint.sh
-              fi
-            fi
-
+            
             # Stop existing containers first
-            docker_compose -f docker-compose.prod.yml down || true
-
+            docker compose -f docker-compose.prod.yml down || true
+            
             # Create .env file for production
             cat > .env << 'EOF'
             DATABASE_URL=${{ secrets.DATABASE_URL }}
@@ -295,36 +158,36 @@ jobs:
             fi
             
             # Remove old containers and images
-            docker_compose -f docker-compose.prod.yml rm -f
+            docker compose -f docker-compose.prod.yml rm -f
             # Clean up disk space and memory before building
-            docker_cmd system prune -af --volumes || true
+            docker system prune -af --volumes || true
             # Free up memory by clearing build cache
-            docker_cmd builder prune -af || true
+            docker builder prune -af || true
             
             # Build with memory-efficient options
             echo "Building containers with memory optimization..."
-            DOCKER_BUILDKIT=1 docker_compose -f docker-compose.prod.yml build --no-cache --memory 1g || {
+            DOCKER_BUILDKIT=1 docker compose -f docker-compose.prod.yml build --no-cache --memory 1g || {
               echo "Build failed, trying without memory limit..."
-              docker_compose -f docker-compose.prod.yml build --no-cache
+              docker compose -f docker-compose.prod.yml build --no-cache
             }
             
             echo "Starting containers..."
-            if ! docker_compose -f docker-compose.prod.yml up -d; then
+            if ! docker compose -f docker-compose.prod.yml up -d; then
               echo "Failed to start containers"
-              docker_compose -f docker-compose.prod.yml logs
+              docker compose -f docker-compose.prod.yml logs
               exit 1
             fi
             
             # Show initial container status
             echo "Container status after startup:"
-            docker_compose -f docker-compose.prod.yml ps
+            docker compose -f docker-compose.prod.yml ps
 
             # Backend will handle migrations automatically on startup via entrypoint script
             echo "Waiting for backend to initialize and apply migrations..."
             
             # Monitor backend logs for migration status
             echo "Monitoring backend startup and migration process..."
-            docker_compose -f docker-compose.prod.yml logs -f backend &
+            docker compose -f docker-compose.prod.yml logs -f backend &
             LOGS_PID=$!
             
             # Give migrations time to run
@@ -334,9 +197,9 @@ jobs:
             kill $LOGS_PID 2>/dev/null || true
 
             # Check if backend container is running
-            if ! docker_cmd ps | grep -q "chase_backend"; then
+            if ! docker ps | grep -q "chase_backend"; then
               echo "Backend container is not running after startup"
-              docker_compose -f docker-compose.prod.yml logs backend
+              docker compose -f docker-compose.prod.yml logs backend
               exit 1
             fi
             
@@ -345,14 +208,14 @@ jobs:
             timeout=180  # 3 minutes
             while [ $timeout -gt 0 ]; do
               # Check if backend container is running first
-              if ! docker_cmd ps | grep -q "chase_backend"; then
+              if ! docker ps | grep -q "chase_backend"; then
                 echo "Backend container stopped running, checking logs..."
-                docker_compose -f docker-compose.prod.yml logs backend
+                docker compose -f docker-compose.prod.yml logs backend
                 exit 1
               fi
               
               # Try to connect to health endpoint
-              if docker_compose -f docker-compose.prod.yml exec -T backend curl -f http://localhost:3001/health >/dev/null 2>&1; then
+              if docker compose -f docker-compose.prod.yml exec -T backend curl -f http://localhost:3001/health >/dev/null 2>&1; then
                 echo "Backend container is ready and healthy"
                 break
               fi
@@ -364,70 +227,70 @@ jobs:
             if [ $timeout -le 0 ]; then
               echo "Backend container failed to start properly"
               echo "Container status:"
-              docker_compose -f docker-compose.prod.yml ps
+              docker compose -f docker-compose.prod.yml ps
               echo "Backend logs:"
-              docker_compose -f docker-compose.prod.yml logs backend
+              docker compose -f docker-compose.prod.yml logs backend
               exit 1
             fi
             
             
             # Initialize service records
             echo "Initializing service records..."
-            docker_compose -f docker-compose.prod.yml exec -T backend bun run scripts/init-all-services.ts || {
+            docker compose -f docker-compose.prod.yml exec -T backend bun run scripts/init-all-services.ts || {
               echo "Service initialization failed, continuing anyway..."
             }
             
             # Disable emulator services
             echo "Disabling emulator services..."
-            docker_compose -f docker-compose.prod.yml exec -T backend bun run scripts/disable-emulator-services.ts || {
+            docker compose -f docker-compose.prod.yml exec -T backend bun run scripts/disable-emulator-services.ts || {
               echo "Failed to disable emulator services, continuing anyway..."
             }
             
             # Verify all services are running
             echo "Verifying services..."
-            if ! docker_cmd ps | grep -q "chase_backend"; then
+            if ! docker ps | grep -q "chase_backend"; then
               echo "ERROR: Backend container is not running!"
-              docker_compose logs backend
+              docker compose logs backend
               exit 1
             fi
             
-            if ! docker_cmd ps | grep -q "chase_frontend"; then
+            if ! docker ps | grep -q "chase_frontend"; then
               echo "ERROR: Frontend container is not running!"
-              docker_compose logs frontend
+              docker compose logs frontend
               exit 1
             fi
             
-            if ! docker_cmd ps | grep -q "chase_nginx"; then
+            if ! docker ps | grep -q "chase_nginx"; then
               echo "ERROR: Nginx container is not running!"
-              docker_compose -f docker-compose.prod.yml logs nginx
+              docker compose -f docker-compose.prod.yml logs nginx
               exit 1
             fi
             
             # Final schema verification
             echo -e "\n==================== FINAL SCHEMA VERIFICATION ===================="
-            echo ">>> Verifying all required columns exist..."
+            echo ">>> Verifying all required columns exist..."bun
             
             echo -e "\nTransaction table columns:"
-            docker_compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Transaction' AND column_name IN ('merchantRate', 'traderProfit', 'matchedNotificationId') ORDER BY column_name;" || echo "Failed to verify Transaction columns"
+            docker compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Transaction' AND column_name IN ('merchantRate', 'traderProfit', 'matchedNotificationId') ORDER BY column_name;" || echo "Failed to verify Transaction columns"
             
             echo -e "\nPayout table columns:"
-            docker_compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Payout' AND column_name IN ('methodId', 'profitAmount') ORDER BY column_name;" || echo "Failed to verify Payout columns"
+            docker compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Payout' AND column_name IN ('methodId', 'profitAmount') ORDER BY column_name;" || echo "Failed to verify Payout columns"
             
             echo -e "\nNotification table columns:"
-            docker_compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Notification' AND column_name = 'packageName' ORDER BY column_name;" || echo "Failed to verify Notification columns"
+            docker compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Notification' AND column_name = 'packageName' ORDER BY column_name;" || echo "Failed to verify Notification columns"
             
             echo -e "\nNew tables verification:"
-            docker_compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('SettleRequest', 'TransactionAttempt', 'merchant_emulator_logs') ORDER BY table_name;" || echo "Failed to verify new tables"
+            docker compose -f docker-compose.prod.yml exec -T backend bunx prisma db execute --stdin <<< "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('SettleRequest', 'TransactionAttempt', 'merchant_emulator_logs') ORDER BY table_name;" || echo "Failed to verify new tables"
             
             echo "=================================================================="
             
             # Show final status
-            docker_compose -f docker-compose.prod.yml ps
+            docker compose -f docker-compose.prod.yml ps
             
             # Clean up disk space
-            docker_cmd system prune -af
+            docker system prune -af
             
-            echo "Deployment completed successfully!"
+            echo "✅ Deployment completed successfully!"
             
             # Trigger APK build
             echo "Triggering APK build workflow..."
