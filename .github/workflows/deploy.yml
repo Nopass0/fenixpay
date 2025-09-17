@@ -181,7 +181,7 @@ jobs:
               }
             fi
 
-            SSL_DIR="/chasepay/ssl"
+            SSL_DIR="/fenixpay/ssl"
 
             # Check if SSL certificates exist and use appropriate nginx config
             if [ -f "${SSL_DIR}/fullchain.crt" ] && [ -f "${SSL_DIR}/certificate.key" ]; then

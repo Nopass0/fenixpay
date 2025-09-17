@@ -7,7 +7,7 @@ echo "Setting up SSL certificates for fenixpay.xyz"
 # Navigate to project directory
 PROJECT_DIR="/home/fenixpay/fenixpay"
 SSL_SOURCE_DIR="${PROJECT_DIR}/ssl"
-SSL_TARGET_DIR="/chasepay/ssl"
+SSL_TARGET_DIR="/fenixpay/ssl"
 
 # Create target SSL directory
 echo "Creating SSL directory at ${SSL_TARGET_DIR}..."
