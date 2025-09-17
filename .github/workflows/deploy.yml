@@ -74,7 +74,7 @@ jobs:
         working-directory: ./frontend
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: https://chasepay.pro
+          NEXT_PUBLIC_API_URL: https://fenixpay.xyz
 
   deploy:
     needs: [test-backend, test-frontend]
@@ -172,28 +172,32 @@ jobs:
               exit 1
             fi
             
-            # Ensure SSL certificates directory exists
-            mkdir -p ssl
+            # Setup SSL certificates
+            echo "Setting up SSL certificates..."
+            if [ -f scripts/setup-ssl.sh ]; then
+              chmod +x scripts/setup-ssl.sh
+              sudo ./scripts/setup-ssl.sh || {
+                echo "SSL setup failed, but continuing with deployment..."
+              }
+            fi
 
             SSL_DIR="/chasepay/ssl"
 
             # Check if SSL certificates exist and use appropriate nginx config
             if [ -f "${SSL_DIR}/fullchain.crt" ] && [ -f "${SSL_DIR}/certificate.key" ]; then
-              echo "Fullchain SSL certificate found, using HTTPS configuration"
+              echo "SSL certificates found, using HTTPS configuration"
               # Remove HTTP-only config if it exists
               rm -f nginx/conf.d/default-http-only.conf
               # Keep the default.conf which has both HTTP and HTTPS
-            elif [ -f "${SSL_DIR}/certificate.crt" ] && [ -f "${SSL_DIR}/certificate_ca.crt" ] && [ -f "${SSL_DIR}/certificate.key" ]; then
-              echo "Fullchain SSL certificate missing; combining certificate.crt and certificate_ca.crt"
-              cat "${SSL_DIR}/certificate.crt" "${SSL_DIR}/certificate_ca.crt" > "${SSL_DIR}/fullchain.crt"
-              chmod 644 "${SSL_DIR}/fullchain.crt" || true
-              rm -f nginx/conf.d/default-http-only.conf
             else
-              echo "No complete SSL chain found, using HTTP-only configuration"
+              echo "No SSL certificates found, using HTTP-only configuration"
+              # This should not happen if setup-ssl.sh worked
+              echo "WARNING: SSL setup might have failed!"
               # Remove the HTTPS config and use HTTP-only
               rm -f nginx/conf.d/default.conf
-              cp nginx/conf.d/default-http-only.conf nginx/conf.d/default.conf
-              rm -f nginx/conf.d/default-http-only.conf
+              cp nginx/conf.d/default-http-only.conf nginx/conf.d/default.conf || {
+                echo "No HTTP-only config available, keeping default config"
+              }
             fi
             
             # Remove old containers and images
