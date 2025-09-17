@@ -131,6 +131,8 @@ else
         echo "Both migration and db push failed"
         exit 1
     fi
+fi
+
 # Generate Prisma Client
 echo -e "\nGenerating Prisma Client..."
 if bunx prisma generate; then
